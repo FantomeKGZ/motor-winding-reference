@@ -10,7 +10,7 @@
     q: 6,
     winding_type: 'two_layer',
     parallel_branches: 2,
-    winding_pitch: '10',
+    winding_pitch: '15',
     revision: 1,
   };
 
@@ -137,9 +137,13 @@
       try {
         state.candidates = await client.findCandidates(state.motor);
         count.textContent = String(state.candidates.length);
+        const runtime = Boolean(window.CoilMasterSchemeCatalog?.runtime);
+        const source = runtime
+          ? 'Готовый JSON-каталог не найден, поэтому тест безопасно разобрал только нужную старую страницу.'
+          : 'Используется готовый JSON-каталог.';
         status.textContent = state.candidates.length
-          ? 'Каталог загружен. Можно выбрать схему и подключение.'
-          : 'Для тестового двигателя подходящие схемы не найдены.';
+          ? `${source} Можно выбрать схему и подключение.`
+          : `${source} Для тестового двигателя подходящие схемы не найдены.`;
         renderWidget(widgetHost, jsonHost, status);
       } catch (error) {
         status.textContent = `Ошибка каталога: ${error.message}`;
