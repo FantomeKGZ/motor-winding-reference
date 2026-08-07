@@ -11,8 +11,19 @@
   const INDEX_URL = `../shared/data/${current}-search-index.json`;
   const MIN_QUERY_LENGTH = 3;
   const MAX_RESULTS = 12;
+  const FILTERS = [
+    { key: 'all', label: 'Все' },
+    { key: 'winding-layout', label: 'Схемы укладки' },
+    { key: 'connection', label: 'Схемы соединения' },
+    { key: 'motor-data', label: 'Двигатели' },
+    { key: 'table', label: 'Таблицы' },
+    { key: 'reference', label: 'Справочные' },
+  ];
+
   let indexPromise = null;
   let timer = null;
+  let activeFilter = 'all';
+  let lastSearch = null;
 
   function normalize(value) {
     return String(value || '')
@@ -107,16 +118,61 @@
     return `page.html?src=${encodeURIComponent(path)}`;
   }
 
+  function normalizedType(item) {
+    const type = String(item.type || 'page');
+    if (FILTERS.some((filter) => filter.key === type)) return type;
+    return type === 'reference-material' ? 'reference' : 'page';
+  }
+
+  function filteredItems(items) {
+    if (activeFilter === 'all') return items;
+    return items.filter((item) => normalizedType(item) === activeFilter);
+  }
+
+  function buildFilters(items) {
+    const nav = document.createElement('div');
+    nav.className = 'cm-fulltext-filters';
+    nav.setAttribute('role', 'group');
+    nav.setAttribute('aria-label', 'Фильтр результатов поиска');
+
+    const counts = new Map();
+    items.forEach((item) => {
+      const type = normalizedType(item);
+      counts.set(type, (counts.get(type) || 0) + 1);
+    });
+
+    FILTERS.forEach((filter) => {
+      const count = filter.key === 'all' ? items.length : (counts.get(filter.key) || 0);
+      if (filter.key !== 'all' && count === 0) return;
+
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'cm-fulltext-filter';
+      button.dataset.filter = filter.key;
+      button.setAttribute('aria-pressed', String(activeFilter === filter.key));
+      button.textContent = `${filter.label} (${count})`;
+      button.addEventListener('click', () => {
+        activeFilter = filter.key;
+        if (lastSearch) renderResults(lastSearch.items, lastSearch.query, lastSearch.tokens);
+      });
+      nav.appendChild(button);
+    });
+
+    return nav;
+  }
+
   function renderResults(items, query, tokens) {
     const host = getResultsHost();
     host.replaceChildren();
+    lastSearch = { items, query, tokens };
 
     const header = document.createElement('div');
     header.className = 'cm-fulltext-results-header';
 
+    const visibleItems = filteredItems(items);
     const title = document.createElement('strong');
     title.textContent = items.length
-      ? `Поиск по всему справочнику: найдено ${items.length}, показано ${Math.min(items.length, MAX_RESULTS)}`
+      ? `Поиск: найдено ${items.length}${activeFilter !== 'all' ? `, в фильтре ${visibleItems.length}` : ''}`
       : 'Поиск по всему справочнику: ничего не найдено';
 
     const close = document.createElement('button');
@@ -137,10 +193,26 @@
       return;
     }
 
+    host.appendChild(buildFilters(items));
+
+    if (!visibleItems.length) {
+      const empty = document.createElement('p');
+      empty.className = 'cm-fulltext-empty';
+      empty.textContent = 'В выбранной категории совпадений нет.';
+      host.appendChild(empty);
+      host.hidden = false;
+      return;
+    }
+
+    const summary = document.createElement('div');
+    summary.className = 'cm-fulltext-summary';
+    summary.textContent = `Показано ${Math.min(visibleItems.length, MAX_RESULTS)} из ${visibleItems.length}`;
+    host.appendChild(summary);
+
     const list = document.createElement('div');
     list.className = 'cm-fulltext-list';
 
-    items.slice(0, MAX_RESULTS).forEach((item) => {
+    visibleItems.slice(0, MAX_RESULTS).forEach((item) => {
       const card = document.createElement('a');
       card.className = 'cm-fulltext-item';
       card.href = pageUrl(item.path);
@@ -177,6 +249,8 @@
 
     if (query.length < MIN_QUERY_LENGTH || isTableParameterQuery(query)) {
       hideResults();
+      lastSearch = null;
+      activeFilter = 'all';
       return;
     }
 
@@ -188,6 +262,8 @@
         .filter((entry) => entry.score >= 0)
         .sort((a, b) => b.score - a.score || String(a.item.title || '').localeCompare(String(b.item.title || ''), 'ru'))
         .map((entry) => entry.item);
+
+      activeFilter = 'all';
       renderResults(ranked, input.value.trim(), tokens);
     } catch (error) {
       hideResults();
