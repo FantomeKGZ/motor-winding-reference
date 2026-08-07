@@ -10,31 +10,14 @@
 <div class="cm-app">
   <aside class="cm-sidebar" data-sidebar>
     <div class="cm-brand">CoilMaster Handbook</div>
-
     <div class="cm-nav-title">Справочник</div>
     <nav class="cm-nav" aria-label="Основное меню">
-      <a href="index.html" aria-current="page">Главная</a>
-      <a href="#search">Поиск</a>
-      <a href="#schemes">Схемы обмоток</a>
-      <a href="#motors">База двигателей</a>
-      <a href="#tables">Таблицы</a>
-      <a href="#repair">Технология ремонта</a>
+      <a href="index.html" aria-current="page">Главная</a><a href="#search">Поиск</a><a href="#schemes">Схемы обмоток</a><a href="#motors">База двигателей</a><a href="#tables">Таблицы</a><a href="#repair">Технология ремонта</a>
     </nav>
-
     <div class="cm-nav-title">Расчёты и склад</div>
-    <nav class="cm-nav" aria-label="Расчёты и склад">
-      <a href="#recalculation">Перерасчёт Al → Cu</a>
-      <a href="#warehouse">Склад проводов</a>
-    </nav>
-
+    <nav class="cm-nav" aria-label="Расчёты и склад"><a href="#recalculation">Перерасчёт Al → Cu</a><a href="#warehouse">Склад проводов</a></nav>
     <div class="cm-nav-title">CoilMaster OS</div>
-    <nav class="cm-nav" aria-label="Меню CoilMaster">
-      <a href="/web/desktop/">Панель управления</a>
-      <a href="/web/desktop/#winding">Текущая намотка</a>
-      <a href="/web/desktop/#history">История работ</a>
-      <a href="/web/desktop/#status">Состояние ESP32</a>
-      <a href="/web/desktop/#settings">Настройки</a>
-    </nav>
+    <nav class="cm-nav" aria-label="Меню CoilMaster"><a href="/web/desktop/">Панель управления</a><a href="/web/desktop/#winding">Текущая намотка</a><a href="/web/desktop/#history">История работ</a><a href="/web/desktop/#status">Состояние ESP32</a><a href="/web/desktop/#settings">Настройки</a></nav>
   </aside>
 
   <main class="cm-main">
@@ -47,28 +30,39 @@
       <section class="legacy-header" aria-label="Шапка справочника">
         <img src="../../sourse/desktop/Справочник от 09.12.2024 HTML/images/verh.jpg" alt="Справочник обмотчика асинхронных электродвигателей">
       </section>
-
       <section class="legacy-content">
         <h1>Справочник обмотчика асинхронных электродвигателей</h1>
-        <p><strong>Первая тестовая оболочка.</strong> Главная страница сохраняет привычную структуру оригинала. Новые меню и поиск добавлены вокруг неё, не меняя логику работы таблиц.</p>
+        <div class="legacy-note"><strong>Привычная главная страница сохранена.</strong> Таблица выбора схем остаётся в центре, а новые функции вынесены в боковое меню и строку поиска.</div>
+
+        <div class="quick-sections" aria-label="Быстрые разделы">
+          <a href="#schemes">Схемы соединений и укладки</a>
+          <a id="motors" href="../../sourse/desktop/Справочник от 09.12.2024 HTML/AIR.html">Обмоточные данные двигателей</a>
+          <a id="tables" href="../../sourse/desktop/Справочник от 09.12.2024 HTML/index.html">Открыть оригинальную главную</a>
+          <a id="repair" href="#repair">Технология и справочные материалы</a>
+        </div>
 
         <h2 id="schemes">Схемы соединений и укладки обмоток</h2>
         <div class="table-scroll">
           <table class="legacy-table">
-            <thead>
-              <tr><th rowspan="2">Число пазов</th><th colspan="6">Обороты в минуту</th></tr>
-              <tr><th>3000</th><th>1500</th><th>1000</th><th>750</th><th>600</th><th>500</th></tr>
-            </thead>
+            <thead><tr><th rowspan="2">Число пазов</th><th colspan="6">Обороты в минуту</th></tr><tr><th>3000</th><th>1500</th><th>1000</th><th>750</th><th>600</th><th>500</th></tr></thead>
             <tbody>
               <tr><th>9</th><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y93000.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y91500.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y91000.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y9750.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y9600.html">✓</a></td><td></td></tr>
               <tr><th>12</th><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y123000.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y121500.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y121000.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y12750.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y12600.html">✓</a></td><td></td></tr>
+              <tr><th>15</th><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y153000.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y151500.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y151000.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y15750.html">✓</a></td><td></td><td></td></tr>
               <tr><th>18</th><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y183000.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y181500.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y181000.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y18750.html">✓</a></td><td></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y18500.html">✓</a></td></tr>
+              <tr><th>21</th><td></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y211500.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y211000.html">✓</a></td><td></td><td></td><td></td></tr>
               <tr><th>24</th><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y243000.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y241500.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y241000.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y24750.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y24600.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y24500.html">✓</a></td></tr>
+              <tr><th>27</th><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y273000.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y271500.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y271000.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y27750.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y27600.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y27500.html">✓</a></td></tr>
+              <tr><th>30</th><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y303000.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y301500.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y301000.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y30750.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y30600.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y30500.html">✓</a></td></tr>
+              <tr><th>31</th><td></td><td></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y311000dyq.html">✓</a></td><td></td><td></td><td></td></tr>
+              <tr><th>32</th><td></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y321500.html">✓</a></td><td></td><td></td><td></td><td></td></tr>
+              <tr><th>33</th><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y333000.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y331500.html">✓</a></td><td></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y33750.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y33600.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y33500.html">✓</a></td></tr>
+              <tr><th>36</th><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y363000.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y361500.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y361000.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y36750.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y36600.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y36500.html">✓</a></td></tr>
+              <tr><th>39</th><td></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y391500.html">✓</a></td><td><a href="../../sourse/desktop/Справочник от 09.12.2024 HTML/y391000.html">✓</a></td><td></td><td></td><td></td></tr>
             </tbody>
           </table>
         </div>
-
-        <p>На следующем этапе сюда будет перенесена полная оригинальная таблица и все остальные разделы без изменения привычного порядка.</p>
+        <p class="legacy-note">Это первая расширенная выборка. Остальные строки и разделы будут добавляться после автоматической проверки существования ссылок.</p>
       </section>
     </div>
   </main>
