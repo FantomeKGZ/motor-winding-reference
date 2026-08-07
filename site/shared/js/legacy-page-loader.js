@@ -56,6 +56,34 @@
     });
   }
 
+  function buildPageControls() {
+    const controls = document.createElement('nav');
+    controls.className = 'legacy-page-controls';
+    controls.setAttribute('aria-label', 'Навигация по справочнику');
+
+    const back = document.createElement('button');
+    back.type = 'button';
+    back.className = 'legacy-page-control';
+    back.textContent = '← Назад';
+    back.addEventListener('click', () => {
+      if (window.history.length > 1) window.history.back();
+      else window.location.href = 'index.html';
+    });
+
+    const home = document.createElement('a');
+    home.className = 'legacy-page-control';
+    home.href = 'index.html';
+    home.textContent = 'К таблице схем';
+
+    const original = document.createElement('a');
+    original.className = 'legacy-page-control legacy-page-control-muted';
+    original.href = sourceUrl.href;
+    original.textContent = 'Оригинальная страница';
+
+    controls.append(back, home, original);
+    return controls;
+  }
+
   function prepareContent(sourceDocument) {
     const sourceContent = sourceDocument.querySelector('.content') || sourceDocument.body;
     const wrapper = document.createElement('div');
@@ -103,7 +131,7 @@
       if (sourceDocument.title) document.title = `${sourceDocument.title} — CoilMaster`;
 
       const content = prepareContent(sourceDocument);
-      host.replaceChildren(content);
+      host.replaceChildren(buildPageControls(), content);
       document.dispatchEvent(new CustomEvent('handbook:content-loaded'));
     } catch (error) {
       host.innerHTML = '<p class="legacy-note">Не удалось открыть страницу справочника. Исходный файл не изменён; можно вернуться на главную и выбрать другую схему.</p>';
