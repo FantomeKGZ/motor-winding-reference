@@ -2,8 +2,7 @@
   'use strict';
 
   const params = new URLSearchParams(window.location.search);
-  if (params.get('esp32test') !== '1') return;
-
+  const TEST_MODE = params.get('esp32test') === '1';
   const current = window.location.pathname.split('/').filter(Boolean)
     .find((part) => part === 'desktop' || part === 'mobile');
   if (!current || !/\/index\.html$/i.test(window.location.pathname)) return;
@@ -25,7 +24,6 @@
   function inferRowSlots(row) {
     const cells = Array.from(row?.querySelectorAll('th, td') || []);
     if (!cells.length) return null;
-
     for (const cell of cells.slice(0, 2)) {
       const values = numberTokens(cell.textContent);
       const plausible = values.find((value) => value >= 6 && value <= 200);
@@ -57,12 +55,13 @@
 
       links.push({
         target,
+        anchor,
+        row,
         href: anchor.getAttribute('href') || '',
         text: (anchor.textContent || '').replace(/\s+/g, ' ').trim(),
         rowText,
         slots,
         rpm,
-        exists: true,
       });
     });
 
@@ -93,23 +92,80 @@
       .sort((a, b) => b.score - a.score || String(a.link.text || '').localeCompare(String(b.link.text || ''), 'ru'));
   }
 
+  function clearEsp32Highlights() {
+    document.querySelectorAll('.cm-esp32-row-hit').forEach((node) => node.classList.remove('cm-esp32-row-hit'));
+    document.querySelectorAll('.cm-esp32-cell-hit').forEach((node) => node.classList.remove('cm-esp32-cell-hit'));
+    document.querySelector('[data-esp32-match-panel]')?.remove();
+  }
+
+  function highlightMatches(matches) {
+    matches.forEach(({ link }) => {
+      link.row?.classList.add('cm-esp32-row-hit');
+      (link.anchor.closest('td, th') || link.anchor).classList.add('cm-esp32-cell-hit');
+    });
+  }
+
   function resultList(matches) {
     const list = document.createElement('ol');
-    matches.slice(0, 10).forEach(({ link, score }) => {
+    list.className = 'cm-esp32-match-list';
+    matches.slice(0, 12).forEach(({ link, score }) => {
       const item = document.createElement('li');
       const anchor = document.createElement('a');
       anchor.href = `page.html?src=${encodeURIComponent(link.target)}&from=home`;
       anchor.textContent = link.text || link.target;
 
       const meta = document.createElement('small');
-      meta.textContent = ` — ${link.slots ?? '?'} пазов / ${link.rpm ?? '?'} об/мин, совпадение ${score}`;
+      meta.textContent = ` — ${link.slots ?? '?'} пазов / ${link.rpm ?? '?'} об/мин`;
       item.append(anchor, meta);
       list.appendChild(item);
     });
     return list;
   }
 
-  function makePanel(mock, liveLinks, testResults, clientMeta) {
+  function renderLiveMatch(context, matches) {
+    clearEsp32Highlights();
+    highlightMatches(matches);
+
+    const host = document.querySelector('.legacy-content');
+    if (!host) return;
+
+    const motor = context?.payload?.motor || {};
+    const panel = document.createElement('section');
+    panel.className = 'legacy-note cm-esp32-match-panel';
+    panel.dataset.esp32MatchPanel = '';
+
+    const heading = document.createElement('strong');
+    heading.textContent = 'ESP32 → подходящие схемы';
+
+    const summary = document.createElement('p');
+    summary.textContent = `${motor.model || 'Текущий двигатель'}: ${motor.slots ?? '—'} пазов, ${motor.rpm ?? '—'} об/мин. Найдено вариантов: ${matches.length}.`;
+
+    panel.append(heading, summary);
+
+    if (matches.length) {
+      const note = document.createElement('p');
+      note.textContent = matches.length === 1
+        ? 'Найдена одна группа по пазам и оборотам. Перед применением всё равно проверьте параметры обмотки.'
+        : 'Подходящая группа подсвечена в исходной таблице. Конкретный вариант укладки автоматически не выбирается.';
+      panel.append(note, resultList(matches));
+
+      const first = matches[0].link.anchor.closest('td, th') || matches[0].link.anchor;
+      requestAnimationFrame(() => first.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }));
+    } else {
+      const empty = document.createElement('p');
+      empty.textContent = 'В исходной таблице не найдено точного совпадения по количеству пазов и оборотам.';
+      panel.appendChild(empty);
+    }
+
+    host.prepend(panel);
+
+    window.CoilMasterEsp32MatchResult = { context, matches };
+    document.dispatchEvent(new CustomEvent('coilmaster:esp32-match-result', {
+      detail: window.CoilMasterEsp32MatchResult,
+    }));
+  }
+
+  function makeTestPanel(liveLinks, testResults, clientMeta) {
     const panel = document.createElement('section');
     panel.className = 'legacy-note';
     panel.dataset.esp32Test = '';
@@ -138,63 +194,50 @@
       const status = document.createElement('p');
       status.textContent = result.expectNoMatches
         ? (result.matches.length ? `Ошибка: найдено кандидатов ${result.matches.length}, ожидалось 0.` : 'Проверка пройдена: ложных совпадений нет.')
-        : (result.matches.length ? `Найдено кандидатов: ${result.matches.length}. Автоматический выбор не выполняется.` : 'Ошибка: подходящих страниц не найдено.');
+        : (result.matches.length ? `Найдено кандидатов: ${result.matches.length}.` : 'Ошибка: подходящих страниц не найдено.');
       block.appendChild(status);
 
       if (result.matches.length) block.appendChild(resultList(result.matches));
       panel.appendChild(block);
     });
 
-    const warning = document.createElement('p');
-    warning.textContent = 'Совпадение по пазам и оборотам определяет только группу схем. Конкретный вариант укладки выбирается после проверки остальных параметров обмотки.';
-    panel.appendChild(warning);
-
     return panel;
   }
 
-  async function run() {
+  async function runTests() {
+    if (!TEST_MODE || document.querySelector('[data-esp32-test]')) return;
     const host = document.querySelector('.legacy-content');
-    if (!host || host.querySelector('[data-esp32-test]')) return;
-
     const liveLinks = collectLiveLinks();
-    if (!liveLinks.length) return;
-
     const client = window.CoilMasterEsp32Client;
-    if (!client) {
-      console.warn('ESP32 client is unavailable');
-      return;
-    }
+    if (!host || !liveLinks.length || !client) return;
 
     try {
       const context = await client.getContext({ mode: 'mock' });
       const mock = context.payload;
-      const testCases = Array.isArray(mock.test_cases) && mock.test_cases.length
-        ? mock.test_cases
-        : [mock.motor || {}];
-
+      const testCases = Array.isArray(mock.test_cases) && mock.test_cases.length ? mock.test_cases : [mock.motor || {}];
       const testResults = testCases.map((motor) => {
         const matches = findMatches(liveLinks, motor);
         const expectNoMatches = motor.expect_matches === 0;
-        const passed = expectNoMatches ? matches.length === 0 : matches.length > 0;
-        return { motor, matches, expectNoMatches, passed };
+        return { motor, matches, expectNoMatches, passed: expectNoMatches ? matches.length === 0 : matches.length > 0 };
       });
-
-      host.prepend(makePanel(mock, liveLinks, testResults, context));
-
-      window.CoilMasterEsp32TestResult = {
-        mock,
-        client: context,
-        linkCount: liveLinks.length,
-        testResults,
-      };
-      document.dispatchEvent(new CustomEvent('coilmaster:esp32-test-result', {
-        detail: window.CoilMasterEsp32TestResult,
-      }));
+      host.prepend(makeTestPanel(liveLinks, testResults, context));
     } catch (error) {
       console.warn('ESP32 scheme matching test failed:', error);
     }
   }
 
-  document.addEventListener('handbook:content-loaded', run);
-  run();
+  function handleContext(context) {
+    if (!context?.payload?.motor) return;
+    const liveLinks = collectLiveLinks();
+    if (!liveLinks.length) return;
+    renderLiveMatch(context, findMatches(liveLinks, context.payload.motor));
+  }
+
+  document.addEventListener('coilmaster:esp32-context', (event) => handleContext(event.detail));
+  document.addEventListener('handbook:content-loaded', () => {
+    runTests();
+    if (window.CoilMasterEsp32Context) handleContext(window.CoilMasterEsp32Context);
+  });
+
+  runTests();
 })();
