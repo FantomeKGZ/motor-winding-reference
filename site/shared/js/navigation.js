@@ -200,10 +200,12 @@
   loadStyleOnce('../shared/css/search-filters.css');
   loadStyleOnce('../shared/css/recent-history.css');
   loadStyleOnce('../shared/css/favorites.css');
+  loadStyleOnce('../shared/css/page-parameters.css');
   loadScriptOnce('../shared/js/home-content-loader.js');
   loadScriptOnce('../shared/js/fulltext-search.js');
   loadScriptOnce('../shared/js/recent-history.js');
   loadScriptOnce('../shared/js/favorites.js');
+  loadScriptOnce('../shared/js/page-parameters.js');
 
   if (!button || !sidebar) return;
 
