@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Страница справочника — мобильная версия</title>
+  <link rel="stylesheet" href="../shared/css/base.css">
+</head>
+<body>
+<div class="cm-app">
+  <aside class="cm-sidebar" data-sidebar>
+    <div class="cm-brand">CoilMaster Handbook</div>
+    <div class="cm-nav-title">Справочник</div>
+    <nav class="cm-nav">
+      <a href="index.html">Главная</a>
+      <a href="index.html#search">Поиск</a>
+      <a href="index.html#schemes">Схемы обмоток</a>
+      <a href="index.html#motors">База двигателей</a>
+      <a href="index.html#tables">Таблицы</a>
+      <a href="index.html#repair">Технология ремонта</a>
+    </nav>
+    <div class="cm-nav-title">Расчёты и склад</div>
+    <nav class="cm-nav">
+      <a href="index.html#recalculation">Перерасчёт Al → Cu</a>
+      <a href="index.html#warehouse">Склад проводов</a>
+    </nav>
+    <div class="cm-nav-title">CoilMaster OS</div>
+    <nav class="cm-nav">
+      <a href="/web/mobile/">Панель управления</a>
+      <a href="/web/mobile/#winding">Текущая намотка</a>
+      <a href="/web/mobile/#history">История работ</a>
+      <a href="/web/mobile/#status">Состояние ESP32</a>
+      <a href="/web/mobile/#settings">Настройки</a>
+    </nav>
+  </aside>
+
+  <main class="cm-main">
+    <header class="cm-toolbar">
+      <button class="cm-menu-button" type="button" data-menu-toggle aria-expanded="false">☰ Меню</button>
+      <a class="cm-back-link" href="index.html">← Главная</a>
+    </header>
+
+    <div class="cm-content">
+      <section class="legacy-content" data-legacy-page aria-label="Материал справочника"></section>
+    </div>
+  </main>
+</div>
+<script src="../shared/js/legacy-page-loader.js"></script>
+<script src="../shared/js/navigation.js"></script>
+</body>
+</html>
