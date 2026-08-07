@@ -205,13 +205,17 @@
   loadStyleOnce('../shared/css/recent-history.css');
   loadStyleOnce('../shared/css/favorites.css');
   loadStyleOnce('../shared/css/page-parameters.css');
+  loadStyleOnce('../shared/css/esp32-panel.css');
   loadScriptOnce('../shared/js/home-content-loader.js');
   loadScriptOnce('../shared/js/fulltext-search.js');
   loadScriptOnce('../shared/js/recent-history.js');
   loadScriptOnce('../shared/js/favorites.js');
   loadScriptOnce('../shared/js/page-parameters.js');
   loadScriptOnce('../shared/js/esp32-client.js')
-    .then(() => loadScriptOnce('../shared/js/esp32-scheme-matcher.js'));
+    .then(() => Promise.all([
+      loadScriptOnce('../shared/js/esp32-panel.js'),
+      loadScriptOnce('../shared/js/esp32-scheme-matcher.js'),
+    ]));
 
   if (!button || !sidebar) return;
 
