@@ -54,8 +54,30 @@ a:hover { color: #cc9900; }
   z-index: 10;
 }
 .cm-search { width: min(620px, 100%); padding: 11px 13px; border: 1px solid var(--cm-border); border-radius: 7px; font-size: 1rem; }
-.cm-search-status { color: var(--cm-muted); font-size: 13px; white-space: nowrap; }
+.cm-search-status { color: var(--cm-muted); font-size: .9rem; white-space: nowrap; }
 .cm-content { max-width: 1500px; margin: 0 auto; padding: 10px 14px 20px; }
+
+.cm-fulltext-results {
+  position: sticky;
+  top: var(--cm-header-height);
+  z-index: 9;
+  max-height: min(58vh, 560px);
+  overflow-y: auto;
+  background: #fff;
+  border-bottom: 1px solid var(--cm-border);
+  box-shadow: 0 8px 22px rgba(31, 41, 51, .12);
+  padding: 10px 14px 12px;
+}
+.cm-fulltext-results[hidden] { display: none !important; }
+.cm-fulltext-results-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.cm-fulltext-close { border: 1px solid var(--cm-border); background: #fff; border-radius: 5px; padding: 5px 9px; cursor: pointer; }
+.cm-fulltext-list { display: grid; gap: 6px; }
+.cm-fulltext-item { display: grid; gap: 3px; padding: 9px 10px; border: 1px solid #d7dce2; border-radius: 6px; background: #fbfcfd; color: var(--cm-text); }
+.cm-fulltext-item:hover, .cm-fulltext-item:focus-visible { border-color: var(--cm-primary); background: #f4f8fb; color: var(--cm-text); outline: none; }
+.cm-fulltext-item > strong { color: var(--cm-link); }
+.cm-fulltext-item > span { font-size: .9rem; line-height: 1.35; }
+.cm-fulltext-item > small { color: var(--cm-muted); overflow-wrap: anywhere; }
+.cm-fulltext-empty { margin: 4px 0; color: var(--cm-muted); }
 
 /* Рабочая область сохраняет привычную плотность и структуру старого справочника. */
 .legacy-content {
@@ -188,16 +210,8 @@ a:hover { color: #cc9900; }
   padding: 0 2px;
   font-size: inherit;
 }
-
-/* Поиск не меняет геометрию старой таблицы: только мягко выделяет найденные места. */
-.legacy-table tr.cm-search-row-hit > td,
-.legacy-table tr.cm-search-row-hit > th { background-color: rgba(255, 248, 196, .35); }
-.legacy-table .cm-search-hit {
-  background: #fff0a8 !important;
-  box-shadow: inset 0 0 0 2px #b88700;
-  font-weight: 700;
-}
-.legacy-table .cm-search-hit a { color: #7a4e00; }
+.cm-search-row-hit { background: rgba(255, 244, 181, .35); }
+.cm-search-hit { background: #ffe27a !important; box-shadow: inset 0 0 0 2px #b48800; }
 
 .cm-menu-button { display: none; }
 
@@ -207,8 +221,10 @@ a:hover { color: #cc9900; }
   .cm-sidebar.is-open { transform: translateX(0); }
   .cm-menu-button { display: inline-flex; min-height: 42px; align-items: center; }
   .cm-toolbar { padding: 10px; flex-wrap: wrap; }
-  .cm-search { flex: 1 1 220px; }
-  .cm-search-status { width: 100%; white-space: normal; }
+  .cm-search { flex: 1 1 230px; }
+  .cm-search-status { flex: 1 0 100%; white-space: normal; }
+  .cm-fulltext-results { top: calc(var(--cm-header-height) + 34px); max-height: 52vh; padding: 8px; }
+  .cm-fulltext-item { padding: 8px; }
   .cm-content { padding: 6px; }
   .legacy-content { padding: 4px; font-size: 13px; }
   .legacy-table { font-size: 11px; }
@@ -225,7 +241,7 @@ a:hover { color: #cc9900; }
 }
 
 @media print {
-  .cm-sidebar, .cm-toolbar, .legacy-page-controls, .cm-back-to-top { display: none !important; }
+  .cm-sidebar, .cm-toolbar, .cm-fulltext-results, .legacy-page-controls, .cm-back-to-top { display: none !important; }
   .cm-app { display: block; }
   .cm-content { max-width: none; padding: 0; }
   .legacy-content { border: 0; background: white; color: black; }
