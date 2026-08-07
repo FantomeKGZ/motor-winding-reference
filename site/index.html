@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Справочник обмотчика — выбор интерфейса</title>
+  <link rel="stylesheet" href="shared/css/base.css">
+  <style>
+    .entry-page {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: #f3f5f7;
+    }
+    .entry-card {
+      width: min(760px, 100%);
+      background: #fffdf7;
+      border: 1px solid #cdbb97;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 14px 40px rgba(31, 41, 51, .12);
+    }
+    .entry-banner img {
+      display: block;
+      width: 100%;
+      max-height: 120px;
+      object-fit: cover;
+    }
+    .entry-body { padding: 24px; text-align: center; }
+    .entry-body h1 { color: #996600; margin-top: 0; }
+    .entry-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin: 22px 0;
+    }
+    .entry-choice {
+      display: block;
+      padding: 20px 14px;
+      border: 1px solid #c8ced6;
+      border-radius: 8px;
+      background: white;
+      color: #1f2933;
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+    .entry-choice:hover,
+    .entry-choice:focus-visible {
+      border-color: #996600;
+      color: #996600;
+      outline: none;
+    }
+    .entry-hint { color: #52606d; }
+    .entry-options { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+    .entry-reset {
+      border: 0;
+      background: transparent;
+      color: #003399;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    @media (max-width: 620px) {
+      .entry-actions { grid-template-columns: 1fr; }
+      .entry-body { padding: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="entry-page">
+    <section class="entry-card" aria-labelledby="entry-title">
+      <div class="entry-banner">
+        <img src="../sourse/desktop/Справочник от 09.12.2024 HTML/images/verh.jpg" alt="Справочник обмотчика асинхронных электродвигателей">
+      </div>
+      <div class="entry-body">
+        <h1 id="entry-title">Выберите удобный интерфейс</h1>
+        <p class="entry-hint" data-entry-hint>Сайт предложил подходящий вариант по размеру экрана. Выбор можно изменить в любое время.</p>
+
+        <div class="entry-actions">
+          <a class="entry-choice" href="desktop/" data-interface-choice="desktop">🖥 Версия для компьютера</a>
+          <a class="entry-choice" href="mobile/" data-interface-choice="mobile">📱 Версия для телефона</a>
+        </div>
+
+        <label>
+          <input type="checkbox" data-remember-choice checked>
+          Запомнить мой выбор
+        </label>
+
+        <div class="entry-options">
+          <button class="entry-reset" type="button" data-clear-choice>Сбросить сохранённый выбор</button>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script src="shared/js/interface-selector.js"></script>
+</body>
+</html>
