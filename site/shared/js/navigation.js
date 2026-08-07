@@ -207,12 +207,14 @@
   loadStyleOnce('../shared/css/page-parameters.css');
   loadStyleOnce('../shared/css/esp32-panel.css');
   loadStyleOnce('../shared/css/special-schemes.css');
+  loadStyleOnce('../shared/css/scheme-picker.css');
   loadScriptOnce('../shared/js/home-content-loader.js');
   loadScriptOnce('../shared/js/fulltext-search.js');
   loadScriptOnce('../shared/js/recent-history.js');
   loadScriptOnce('../shared/js/favorites.js');
   loadScriptOnce('../shared/js/page-parameters.js');
   loadScriptOnce('../shared/js/special-scheme-classifier.js');
+  loadScriptOnce('../shared/js/scheme-picker.js');
   loadScriptOnce('../shared/js/esp32-client.js')
     .then(() => Promise.all([
       loadScriptOnce('../shared/js/esp32-panel.js'),
