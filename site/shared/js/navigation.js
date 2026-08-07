@@ -152,7 +152,7 @@
       } else if (visibleCount) {
         status.textContent = `Найдено строк: ${visibleCount}`;
       } else {
-        status.textContent = 'Совпадений в таблицах нет';
+        status.textContent = 'В главной таблице совпадений нет';
       }
 
       if (exactHits.length && query !== lastScrolledQuery) {
@@ -179,17 +179,18 @@
     document.addEventListener('handbook:content-loaded', applyFilter);
   }
 
-  function loadOriginalHomeContent() {
-    if (document.querySelector('script[src$="home-content-loader.js"]')) return;
+  function loadScriptOnce(src) {
+    if (document.querySelector(`script[src$="${src.split('/').pop()}"]`)) return;
     const script = document.createElement('script');
-    script.src = '../shared/js/home-content-loader.js';
+    script.src = src;
     script.defer = true;
     document.body.appendChild(script);
   }
 
   addInterfaceControls();
   enableTableSearch();
-  loadOriginalHomeContent();
+  loadScriptOnce('../shared/js/home-content-loader.js');
+  loadScriptOnce('../shared/js/fulltext-search.js');
 
   if (!button || !sidebar) return;
 
