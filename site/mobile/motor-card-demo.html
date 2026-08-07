@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Тест карточки двигателя — CoilMaster</title>
+  <link rel="stylesheet" href="../shared/css/base.css">
+  <link rel="stylesheet" href="../shared/css/scheme-picker.css">
+  <link rel="stylesheet" href="../shared/css/motor-scheme-widget.css">
+  <link rel="stylesheet" href="../shared/css/motor-card-demo.css">
+</head>
+<body>
+<main class="cm-demo-page" data-motor-card-demo>
+  <a class="cm-demo-back" href="index.html">← К справочнику</a>
+  <h1>Тест карточки двигателя</h1>
+  <p class="cm-demo-note"><strong>Только внешний сайт.</strong> ESP32 здесь не используется. Проверяется полный пользовательский сценарий выбора укладки и схемы подключения.</p>
+
+  <div class="cm-demo-toolbar">
+    <button type="button" data-demo-reload>Сбросить тест</button>
+    <span>Подходящих схем: <strong data-demo-candidate-count>0</strong></span>
+    <span class="cm-demo-status" data-demo-status role="status"></span>
+  </div>
+
+  <div class="cm-demo-layout">
+    <section class="cm-demo-card" data-demo-motor-summary></section>
+    <section class="cm-demo-card">
+      <div data-demo-widget></div>
+      <div class="cm-demo-json">
+        <strong>Будущая запись ESP32:</strong>
+        <pre data-demo-binding-json>{"winding_reference": null}</pre>
+      </div>
+    </section>
+  </div>
+</main>
+<script src="../shared/js/scheme-catalog-client.js"></script>
+<script src="../shared/js/scheme-picker.js"></script>
+<script src="../shared/js/motor-scheme-widget.js"></script>
+<script src="../shared/js/motor-card-demo.js"></script>
+</body>
+</html>
