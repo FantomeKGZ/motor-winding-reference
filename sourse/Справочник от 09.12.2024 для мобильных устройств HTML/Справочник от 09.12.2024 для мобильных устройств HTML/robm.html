@@ -1,0 +1,138 @@
+<html>
+<head>
+<title>Расчёт обмотки трёхфазного односкоростного асинхронного двигателя.</title>
+<meta name="keywords" content="Расчёт обмотки трёхфазного односкоростного асинхронного двигателя.">
+<meta name="description" content="Расчёт обмотки трёхфазного односкоростного асинхронного двигателя.">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1251">
+<META name="ROBOTS" content="ALL">
+<Link rel="stylesheet" type="text/css" href="documents/style.css">
+<link rel="shortcut icon" href="images/favicon.ico">
+<meta name="viewport" content="width=device-width">
+</head>
+<body>
+<div class="verh"><a href="index.html"><img border="0" src="images/verh.jpg" width="900" height="120" alt="Справочник обмотчика"></a></div>
+<div class="content">
+<p class="glavnaya"><a href="index.html">Перейти на главную страницу справочника.</a></p>
+<h1>Расчёт обмотки трёхфазного односкоростного асинхронного двигателя.</h1>
+<p align="center"><b>Расчёт однослойной обмотки трёхфазного электродвигателя с напряжением питания 380 вольт, частотой тока 50 герц, соединение фаз "Y", количество параллельных ветвей а=1.</b></p>
+<hr>
+<ul>
+	<li><b>Размеры сердечника статора.</b> <b>Di</b> - внутренний диаметр сердечника статора в см. <b>L</b> - длина сердечника статора в см. <b>h</b> - высота спинки статора в см. <b>b</b> - ширина зубца статора в см.<br><img border="0" src="images/robm/rstat.jpg" width="500" height="477" alt="Размеры сердечника статора"></a></li>
+</ul>
+<hr>
+<p align="center"><b>Определение основных параметров.</b></p>
+<ul>
+	<li><b>Формула для определения числа полюсов (максимально допустимых оборотов) сердечника статора.</b> Результат округлить до ближайшего целого чётного числа. <b>Di</b> - внутренний диаметр сердечника статора в см. <b>h</b> - высота спинки статора в см.<br><img border="0" src="images/robm/op2p.JPG" width="144" height="67"></li>
+</ul>
+<ul>
+	<li><b>Число пазов на полюс и фазу.</b> <b>Z<small>1</small></b> - число пазов статора, <b>2р</b> - число полюсов, <b>m</b> - количество фаз.<br><img border="0" src="images/formyla/ppf.JPG" width="85" height="55"></li>
+</ul>
+<ul>
+	<li><b>Шаг однослойной обмотки по пазам.</b> <b>Z<small>1</small></b> - число пазов статора, <b>2р</b> - число полюсов.<br><img border="0" src="images/formyla/step.JPG" width="67" height="55"></li>
+</ul>
+<hr>
+<p align="center"><b>Расчёт числа витков в пазу.</b></p>
+<ul>
+	<li><b>Число витков в пазу.</b> <b>Z<small>1</small></b> - число пазов статора, <b>L</b> - длина сердечника статора в см, <b>b</b> - ширина зубца статора в см, <b>Вz</b> - магнитная индукция в зубцах статора, <a href="mist.html">выбирается в зависимости от мощности, оборотов и исполнения электродвигателя</a>.<br><img border="0" src="images/robm/opn.JPG" width="205" height="65"></li>
+</ul>
+<ul>
+	<li><b>Формула для проверки величины магнитной индукции в спинке статора.</b> <a href="mist.html">Если магнитная индукция превысит величину указанную в таблицах</a>, увеличить число витков в пазу. <b>Z<small>1</small></b> - число пазов статора, <b>L</b> - длина сердечника статора в см, <b>h</b> - высота спинки статора в см, <b>N</b> - число витков пазу.<br><img border="0" src="images/robm/mitl.JPG" width="207" height="70"></li>
+</ul>
+<hr>
+<p align="center"><b>Расчёт площади паза.</b></p>
+<ul>
+	<li><b>Трапецеидальный паз</b>. Размеры паза в мм.<br><a href="images/robm/razm_A.jpg"><img border="0" src="images/robm/razm_A.jpg" width="301" height="410"></a><br>Разбиваем паз на две фигуры, это трапеция с высотой <b>h</b> и круг с диаметром <b>а</b>.<br>Высоту трапеции определяем<br><img border="0" src="images/robm/vtr.JPG" width="133" height="46">.<br>Площадь трапеции<br><img border="0" src="images/robm/pltr.JPG" width="152" height="73">.<br>Площадь круга<br><img border="0" src="images/robm/plkr.JPG" width="166" height="40">.<br>Для определения площади паза, нужно к площади трапеции прибавить половину площади круга.<br>Площадь паза.<br><img border="0" src="images/robm/plpazA.JPG" width="251" height="78">.</li>
+</ul>
+
+
+
+<ul>
+	<li><b>Грушевидный паз.</b> Размеры паза в мм.<br><a href="images/robm/razm_B.jpg"><img border="0" src="images/robm/razm_B.jpg" width="301" height="410"></a><br>Разбиваем паз на три фигуры, это трапеция с высотой <b>h</b> и два круга с диаметром <b>а</b> и <b>b</b>.<br>Высоту трапеции определяем<br><img border="0" src="images/robm/vtr2.JPG" width="186" height="44">.<br>Площадь трапеции<br><img border="0" src="images/robm/pltr.JPG" width="152" height="73">.<br>Площадь круга<br><img border="0" src="images/robm/plkr.JPG" width="166" height="40">.<br>Для определения площади паза, нужно к площади трапеции прибавить половину площади круга <b>а</b> и <b>b</b>.<br>Площадь паза<br><img border="0" src="images/robm/plpazB.JPG" width="352" height="76">.</li>
+</ul>
+<hr>
+<p align="center"><b>Расчёт диаметра провода.</b></p>
+
+
+
+
+<ul>
+	<li><b>Диаметр провода с изоляцией, мм.</b> <b>k<small>п</small></b> - коэффициент заполнения паза по таблице №1. <b>F</b> - площадь паза. <b>N</b> - число витков пазу.<br><img border="0" src="images/robm/dprov.JPG" width="222" height="100"></li>
+</ul>
+<p align="center">Таблица №1.</p>
+<table align="center" border="1" class="table">
+	<tr bgcolor="#DFDFDF">
+		<td rowspan="2"><b>Обмотка</b></td>
+		<td rowspan="2"><b>Паз</b></td>
+		<td colspan="3"><b>k<small>п</small> при мощности, кВт.</b></td>
+	</tr>
+	<tr bgcolor="#DFDFDF">
+		<td><b>до 1,0</b></td>
+		<td><b>1 - 10</b></td>
+		<td><b>10 - 100</b></td>
+	</tr>
+	<tr>
+		<td rowspan="2">Однослойная</td>
+		<td>Трапецеидальный</td>
+		<td>0,37</td>
+		<td>0,40</td>
+		<td>0,43</td>
+	</tr>
+	<tr>
+		<td>Грушевидный</td>
+		<td>0,42</td>
+		<td>0,46</td>
+		<td>0,50</td>
+	</tr>
+	<tr bgcolor="#FFFFFF">
+		<td rowspan="2">Двухслойная</td>
+		<td>Трапецеидальный</td>
+		<td>0,36</td>
+		<td>0,37</td>
+		<td>0,40</td>
+	</tr>
+	<tr bgcolor="#FFFFFF">
+		<td>Грушевидный</td>
+		<td>0,37</td>
+		<td>0,40</td>
+		<td>0,43</td>
+	</tr>
+</table>
+<ul>
+	<li><b>При известных обмоточных данных старой обмотки</b>, для расчёта сечения провода воспользуйтесь этой формулой, где <b>Nс</b> - число витков в пазу старой обмотки, <b>Sс</b> - сечение провода старой обмотки, <b>N</b> - число витков в пазу новой обмотки.<br><img border="0" src="images/robm/snov.JPG" width="134" height="64"></li>
+</ul>
+<ul>
+	<li><b>Расчёт сечения провода с помощью стальных спиц.</b> <b>Nsp</b> - число спиц поместившихся в паз, <b>Ssp</b> - сечение спицы (Диаметр спицы, условно диаметр провода с изоляцией), <b>N</b> - число витков в пазу новой обмотки.<br><img border="0" src="images/formyla/cnovsp.JPG" width="151" height="62"></li>
+</ul>
+<hr>
+<p align="center"><b>Расчёт максимального тока.</b></p>
+<ul>
+	<li><b>Формула для расчёта максимального тока электродвигателя.</b> <b>S</b> - сечение провода, <b>j</b> - плотность тока, <a href="ptel.html">выбирается в зависимости от мощности, оборотов и исполнения электродвигателя</a>.<br><img border="0" src="images/formyla/ifaz.JPG" width="96" height="37"></li>
+</ul>
+<hr>
+<p align="center"><b>Расчёт мощности электродвигателя.</b></p>
+
+
+<ul>
+	<li><b>Формула для расчёта мощности электродвигателя.</b> <b>I</b> - максимальный ток электродвигателя. Результат произведения коэффициентов мощности и полезного действия (cos&#966;&times;&#951;), <a href="ptel.html">берётся из таблиц в зависимости от мощности и оборотов электродвигателя</a>.<br><img border="0" src="images/formyla/pdv380z.JPG" width="240" height="35"></li>
+</ul>
+<hr>
+<h2>Расчёт числа витков в пазу фазного ротора.</h2>
+<p align="center"><b>Расчёт однослойной обмотки с частотой тока 50 герц, соединение фаз "Y", количество параллельных ветвей а=1.</b></p>
+<ul>
+	<li><b>Число витков в пазу.</b> <b>U<small>2</small></b> - напряжение питания обмотки ротора (от 100 до 340 вольт), <b>N</b> - количество витков в пазу статора, <b>Z<small>1</small></b> - число пазов статора, <b>U</b> - напряжение питания обмотки статора, <b>Z<small>2</small></b> - число пазов ротора.<br><img border="0" src="images/formyla/rotor.JPG" width="177" height="70"></li>
+</ul>
+<ul>
+	<li><b>Число пазов на полюс и фазу.</b> <b>Z<small>2</small></b> - число пазов ротора, <b>2р</b> - число полюсов, <b>m</b> - количество фаз.<br><img border="0" src="images/formyla/rq.JPG" width="118" height="64"></li>
+</ul>
+<ul>
+	<li><b>Шаг однослойной обмотки по пазам.</b> <b>Z<small>2</small></b> - число пазов ротора, <b>2р</b> - число полюсов.<br><img border="0" src="images/formyla/ry.JPG" width="89" height="66"></li>
+</ul>
+<hr>
+<p align="center"><a href="documents/001.rar">Расчёт однослойной обмотки в программе Excel.</a></p>
+<p align="center">13.06.2015 г.</p>
+<p class="lit"><b>Литература по данной теме:</b><br>Девотченко Ф.С. "Замена обмотки трёхфазных электродвигателей." 1991 г.<br>Кокорев А.С. "Справочник молодого обмотчика электрических машин" 1979 г.</p>
+<p class="glavnaya"><a href="index.html">Перейти на главную страницу справочника.</a></p>
+</div>
+<div align="center">&copy; <strong>Цветков С. А. Справочник обмотчика асинхронных электродвигателей. 2011 г. Все права защищены.</strong></div>
+</body>
+</html>

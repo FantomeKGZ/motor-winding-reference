@@ -1,0 +1,115 @@
+body {
+ max-width: 1500px; /* Максимальная ширина контейнера */
+ margin: 0 auto; /* Отступ слева и справа */
+}
+hr {
+    border: none; /* Убираем границу */
+    background-color: #996600; /* Цвет линии */
+    color: #996600; /* Цвет линии для IE6-7 */
+    height: 3px; /* Толщина линии */
+   }
+@media screen {
+.verh { /* Полоса шапки */
+ background: url("../images/verh2.jpg") /* Путь к фоновой картинке */
+ repeat-x; /* Повторяем фон по горизонтали */
+ margin: 0px; /* Обнуляем отступы */
+ margin-top: 5px; /* Отступ от верха */
+}
+.content { /* Основное содержание страницы */
+ background-image: url("../images/fon.gif"); /* Фон */
+ padding: 5px; /* Поля вокруг текста */
+ margin-top: 5px; /* Отступ от верха */
+ margin-bottom: 5px; /* Отступ снизу */
+}
+H1, H2, H3, H4, H5, H6 { /* Заголовок страницы */
+ text-align: center; /* Выравнивание по центру */
+ font-size: 130%; /* Размер шрифта */
+ color: #996600; /* Цвет текста */
+}
+strong { /* Выделение текста */
+ font-size: 80%; /* Размер шрифта */
+ color: #996600; /* Цвет текста */
+}
+.table { /* Таблица */
+ text-align: center; /* Выравнивание по центру */
+ border: 3px double black; /* Рамка вокруг таблицы */
+ border-collapse: collapse; /* Отображать только одинарные линии */
+}
+A:link { /* Стиль для непосещенной ссылки */
+ text-decoration: none; /* Убирает подчеркивание для ссылок */
+ color: #003399; /* Цвет ссылки */
+} 
+A:visited { /* Стиль для посещенной ссылки */
+ text-decoration: none; /* Убирает подчеркивание для ссылок */
+} 
+A:active { /* Стиль для активной ссылки */
+ text-decoration: none; /* Убирает подчеркивание для ссылок */
+ color: #006600; /* Цвет ссылки */
+} 
+A:hover { /* Стиль для ссылки при наведении на нее мышью */
+ text-decoration: none; /* Убирает подчеркивание для ссылок */
+ color: #CC9900; /* Цвет ссылки */
+}
+ABBR { /* Шапка таблицы */
+ color: #996600; /* Цвет текста */
+ font-weight: bold; /* Полужирный шрифт */
+}
+.glavnaya { /* Возврат на главную */
+ text-align: left; /* Выравнивание слева */
+}
+.obhsx { /* Схемы укл соед подкл */
+ text-align: center; /* Выравнивание */
+}
+.lit { /* Литература */
+ font-size: 80%; /* Размер шрифта */
+}
+img {
+ max-width: 100%;
+ height: auto;
+}
+}
+@media print {
+.verh { /* Полоса шапки */
+ display: none;
+}
+.content { /* Основное содержание страницы */
+ background-color: #FFFFFF;
+ color: #000000; /* Цвет текста */
+}
+H1, H2, H3, H4, H5, H6 { /* Заголовок страницы */
+ text-align: center; /* Выравнивание по центру */
+ font-size: 100%; /* Размер шрифта */
+ color: #000000; /* Цвет текста */
+}
+.table { /* Таблица */
+ text-align: center; /* Выравнивание по центру */
+ border: 3px double black; /* Рамка вокруг таблицы */
+ border-collapse: collapse; /* Отображать только одинарные линии */
+ color: #000000; /* Цвет текста */
+ font-size: 100%; /* Размер шрифта */
+}
+.table2 { /* Таблица */
+ text-align: center; /* Выравнивание по центру */
+ border: 3px double black; /* Рамка вокруг таблицы */
+ border-collapse: collapse; /* Отображать только одинарные линии */
+ width: 700px; /* ширина контейнера */
+ color: #000000; /* Цвет текста */
+}
+ABBR { /* Шапка таблицы */
+ color: #996600; /* Цвет текста */
+ font-weight: bold; /* Полужирный шрифт */
+}
+A:link, A:visited, A:active, A:hover { /* Стиль для ссылки */
+ text-decoration: none; /* Убирает подчеркивание для ссылок */
+ color: #000000;
+}
+.glavnaya { /* Возврат на главную */
+ display: none;
+}
+.obhsx { /* Схемы укл соед подкл */
+ display: none;
+}
+.lit { /* Литература */
+ display: none;
+}
+}
