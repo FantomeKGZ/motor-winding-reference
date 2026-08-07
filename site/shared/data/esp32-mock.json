@@ -1,0 +1,15 @@
+{
+  "api_version": "1.0-test",
+  "source": "mock",
+  "project_id": "TEST-24-3000",
+  "motor": {
+    "model": "Тестовый двигатель",
+    "slots": 24,
+    "rpm": 3000,
+    "phases": 3,
+    "poles": 2,
+    "connection": null,
+    "winding_type": null,
+    "parallel_branches": null
+  }
+}
