@@ -4,6 +4,7 @@
   const STORAGE_KEY = 'coilmaster-handbook-interface';
   const button = document.querySelector('[data-menu-toggle]');
   const sidebar = document.querySelector('[data-sidebar]');
+  const searchInput = document.querySelector('.cm-search');
 
   function storeInterface(value) {
     try {
@@ -65,7 +66,67 @@
     });
   }
 
+  function normalizeSearchText(value) {
+    return value
+      .toLocaleLowerCase('ru-RU')
+      .replace(/[×xх]/g, ' ')
+      .replace(/[^a-zа-яё0-9]+/gi, ' ')
+      .trim();
+  }
+
+  function rowSearchText(row) {
+    const hrefs = Array.from(row.querySelectorAll('a[href]'))
+      .map((link) => decodeURIComponent(link.getAttribute('href') || ''))
+      .join(' ');
+    return normalizeSearchText(`${row.textContent || ''} ${hrefs}`);
+  }
+
+  function enableTableSearch() {
+    if (!searchInput) return;
+
+    const rows = Array.from(document.querySelectorAll('.legacy-table tbody tr'));
+    if (!rows.length) return;
+
+    const status = document.createElement('div');
+    status.className = 'cm-search-status';
+    status.setAttribute('role', 'status');
+    status.setAttribute('aria-live', 'polite');
+    searchInput.insertAdjacentElement('afterend', status);
+
+    const indexedRows = rows.map((row) => ({ row, text: rowSearchText(row) }));
+
+    const applyFilter = () => {
+      const query = normalizeSearchText(searchInput.value);
+      const tokens = query ? query.split(/\s+/).filter(Boolean) : [];
+      let visibleCount = 0;
+
+      indexedRows.forEach(({ row, text }) => {
+        const visible = tokens.every((token) => text.includes(token));
+        row.hidden = !visible;
+        if (visible) visibleCount += 1;
+      });
+
+      if (!tokens.length) {
+        status.textContent = '';
+      } else if (visibleCount) {
+        status.textContent = `Найдено строк: ${visibleCount}`;
+      } else {
+        status.textContent = 'Совпадений в текущей таблице нет';
+      }
+    };
+
+    searchInput.addEventListener('input', applyFilter);
+    searchInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        searchInput.value = '';
+        applyFilter();
+        searchInput.blur();
+      }
+    });
+  }
+
   addInterfaceControls();
+  enableTableSearch();
 
   if (!button || !sidebar) return;
 
