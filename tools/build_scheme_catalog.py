@@ -175,6 +175,7 @@ def inspect_connection(root: Path, href: str, cache: dict[str, dict]) -> dict:
     page_text = " ".join(doc.body_chunks)
     types = connection_kinds(f"{doc.title} {page_text}")
     images: list[dict] = []
+    seen_images: set[tuple[str, str]] = set()
     for idx, paragraph in enumerate(doc.paragraphs):
         ptext = paragraph["text"]
         kinds = connection_kinds(ptext)
@@ -187,6 +188,10 @@ def inspect_connection(root: Path, href: str, cache: dict[str, dict]) -> dict:
             image_src = norm_path(doc.paragraphs[idx + 1]["images"][0].get("src"))
         if image_src:
             for kind in kinds:
+                image_key = (kind, image_src)
+                if image_key in seen_images:
+                    continue
+                seen_images.add(image_key)
                 images.append({"type": kind, "image": image_src, "description": ptext})
 
     result = {
@@ -237,11 +242,23 @@ def variants_from_page(root: Path, path: Path, connection_cache: dict[str, dict]
 
         pitch_match = PITCH_RE.search(description)
         branches = sorted({int(m.group(1)) for m in BRANCH_RE.finditer(description)})
-        conn_pages = []
+
+        # One paragraph may repeat the same ss*.html href several times (for
+        # example once per a=1/a=2 label). The catalog must report distinct
+        # connection pages, not duplicate anchors to the same page.
+        connection_targets: list[str] = []
+        seen_connection_targets: set[str] = set()
         for link in paragraph["links"]:
             href = norm_path(link.get("href"))
-            if re.match(r"^ss.*\.html?$", href, re.I):
-                conn_pages.append(inspect_connection(root, href, connection_cache))
+            if not re.match(r"^ss.*\.html?$", href, re.I):
+                continue
+            key = href.casefold()
+            if key in seen_connection_targets:
+                continue
+            seen_connection_targets.add(key)
+            connection_targets.append(href)
+
+        conn_pages = [inspect_connection(root, href, connection_cache) for href in connection_targets]
 
         scheme = {
             "scheme_id": stable_id("CM-SCH", target, image),
@@ -280,15 +297,19 @@ def build(root: Path) -> dict:
             schemes.extend(items)
 
     schemes.sort(key=lambda item: (item.get("slots") or 0, item.get("rpm") or 0, item["legacy_page"], item["image"]))
+    connection_counts = [item["connection_count"] for item in schemes]
     return {
-        "version": 1,
+        "version": 2,
         "generator": "tools/build_scheme_catalog.py",
         "stats": {
             "pages_scanned": pages_scanned,
             "pages_with_variants": pages_with_variants,
             "schemes": len(schemes),
             "connection_pages": len(connection_cache),
-            "schemes_with_multiple_connection_pages": sum(1 for item in schemes if item["connection_count"] > 1),
+            "schemes_without_connection_pages": sum(1 for count in connection_counts if count == 0),
+            "schemes_with_one_connection_page": sum(1 for count in connection_counts if count == 1),
+            "schemes_with_multiple_connection_pages": sum(1 for count in connection_counts if count > 1),
+            "max_connection_pages_per_scheme": max(connection_counts, default=0),
         },
         "schemes": schemes,
     }
@@ -306,7 +327,12 @@ def main() -> int:
         catalog = build(root)
         out = args.output / f"{name}-scheme-catalog.json"
         out.write_text(json.dumps(catalog, ensure_ascii=False, indent=2), encoding="utf-8")
-        print(f"{name}: {catalog['stats']['schemes']} schemes; {catalog['stats']['connection_pages']} connection pages -> {out}")
+        stats = catalog["stats"]
+        print(
+            f"{name}: {stats['schemes']} schemes; "
+            f"{stats['connection_pages']} connection pages; "
+            f"multi={stats['schemes_with_multiple_connection_pages']} -> {out}"
+        )
     return 0
 
 
