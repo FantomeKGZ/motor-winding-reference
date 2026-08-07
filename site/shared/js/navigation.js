@@ -220,6 +220,7 @@
     .then(() => Promise.all([
       loadScriptOnce('../shared/js/esp32-panel.js'),
       loadScriptOnce('../shared/js/esp32-scheme-matcher.js'),
+      loadScriptOnce('../shared/js/motor-binding-client.js'),
     ]));
 
   if (!button || !sidebar) return;
