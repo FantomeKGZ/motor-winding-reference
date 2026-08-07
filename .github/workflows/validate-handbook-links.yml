@@ -6,6 +6,7 @@ on:
       - 'sourse/**'
       - 'tools/build_scheme_index.py'
       - 'tools/build_home_tables.py'
+      - 'tools/build_image_inventory.py'
       - '.github/workflows/validate-handbook-links.yml'
   workflow_dispatch:
 
@@ -37,6 +38,13 @@ jobs:
           python tools/build_home_tables.py \
             --desktop 'sourse/desktop/Справочник от 09.12.2024 HTML/index.html' \
             --mobile 'sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML/index.html' \
+            --output site/shared/data
+
+      - name: Inventory handbook images
+        run: |
+          python tools/build_image_inventory.py \
+            --desktop 'sourse/desktop/Справочник от 09.12.2024 HTML' \
+            --mobile 'sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML' \
             --output site/shared/data
 
       - name: Upload generated reports
