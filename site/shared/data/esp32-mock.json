@@ -8,34 +8,47 @@
     "rpm": 3000,
     "phases": 3,
     "poles": 2,
+    "q": 4,
     "connection": null,
     "winding_type": null,
     "parallel_branches": null
   },
   "test_cases": [
     {
-      "id": "24-3000",
+      "id": "24-3000-q4",
       "slots": 24,
       "rpm": 3000,
       "phases": 3,
       "poles": 2,
+      "q": 4,
       "expected": { "min_matches": 1 }
     },
     {
-      "id": "36-1500",
+      "id": "36-1500-q3",
       "slots": 36,
       "rpm": 1500,
       "phases": 3,
       "poles": 4,
+      "q": 3,
       "expected": { "min_matches": 1 }
     },
     {
-      "id": "48-1000",
+      "id": "48-1000-q2667",
       "slots": 48,
       "rpm": 1000,
       "phases": 3,
       "poles": 6,
+      "q": 2.666,
       "expected": { "min_matches": 1 }
+    },
+    {
+      "id": "negative-wrong-q",
+      "slots": 24,
+      "rpm": 3000,
+      "phases": 3,
+      "poles": 2,
+      "q": 9,
+      "expected": { "max_matches": 0 }
     },
     {
       "id": "negative-37-777",
@@ -43,6 +56,7 @@
       "rpm": 777,
       "phases": 3,
       "poles": null,
+      "q": null,
       "expected": { "max_matches": 0 }
     }
   ]
