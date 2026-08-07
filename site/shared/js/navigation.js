@@ -206,6 +206,7 @@
   loadScriptOnce('../shared/js/recent-history.js');
   loadScriptOnce('../shared/js/favorites.js');
   loadScriptOnce('../shared/js/page-parameters.js');
+  loadScriptOnce('../shared/js/esp32-scheme-matcher.js');
 
   if (!button || !sidebar) return;
 
