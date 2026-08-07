@@ -54,12 +54,29 @@ a:hover { color: #cc9900; }
   z-index: 10;
 }
 .cm-search { width: min(620px, 100%); padding: 11px 13px; border: 1px solid var(--cm-border); border-radius: 7px; font-size: 1rem; }
-.cm-content { max-width: 1500px; margin: 0 auto; padding: 14px; }
+.cm-content { max-width: 1500px; margin: 0 auto; padding: 10px 14px 20px; }
 
-.legacy-header { overflow: hidden; background: #e8dfcd; border: 1px solid #cdbb97; border-radius: 8px 8px 0 0; }
-.legacy-header img { display: block; width: 100%; max-height: 120px; object-fit: cover; }
-.legacy-content { background: #fffdf7; border: 1px solid #cdbb97; border-top: 0; padding: 12px; }
-.legacy-content h1, .legacy-content h2, .legacy-content h3 { color: var(--cm-accent); text-align: center; }
+/* Рабочая область сохраняет привычную плотность и структуру старого справочника. */
+.legacy-content {
+  background: #eee9d6;
+  border: 0;
+  padding: 5px;
+  font-family: "Times New Roman", Times, serif;
+  font-size: 14px;
+  line-height: 1.15;
+}
+.legacy-content h1,
+.legacy-content h2,
+.legacy-content h3,
+.legacy-content h4,
+.legacy-content h5,
+.legacy-content h6 {
+  color: var(--cm-accent);
+  text-align: center;
+  font-size: 130%;
+}
+.legacy-content strong { color: var(--cm-accent); }
+.legacy-content img { max-width: 100%; height: auto; }
 
 .legacy-note {
   margin: 12px auto;
@@ -84,13 +101,43 @@ a:hover { color: #cc9900; }
   font-weight: 700;
 }
 
-.table-scroll { overflow-x: auto; overscroll-behavior-inline: contain; }
-.legacy-table { border: 3px double #111; border-collapse: separate; border-spacing: 0; margin: 0 auto; text-align: center; min-width: 720px; background: #fff; }
-.legacy-table th, .legacy-table td { border-right: 1px solid #555; border-bottom: 1px solid #555; padding: 6px; min-width: 58px; }
-.legacy-table tr > :first-child { position: sticky; left: 0; z-index: 2; background: #f2ead9; font-weight: 700; }
-.legacy-table thead th { background: #dfdfdf; }
-.legacy-table thead tr > :first-child { z-index: 4; }
-.legacy-table a { display: inline-block; min-width: 30px; padding: 3px; font-size: 1.1rem; }
+.table-scroll {
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  margin: 4px 0 8px;
+}
+
+/* Не растягиваем старые таблицы. Их геометрия должна оставаться близкой к оригиналу. */
+.legacy-table {
+  border: 3px double #111;
+  border-collapse: collapse;
+  border-spacing: 0;
+  margin: 0 auto;
+  text-align: center;
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  background: transparent;
+  font-family: "Times New Roman", Times, serif;
+  font-size: 12px;
+  line-height: 1.05;
+}
+.legacy-table th,
+.legacy-table td {
+  border: 1px solid #111;
+  padding: 1px 3px;
+  min-width: 0;
+  height: auto;
+  white-space: nowrap;
+  font-weight: normal;
+}
+.legacy-table th { font-weight: 700; }
+.legacy-table a {
+  display: inline;
+  min-width: 0;
+  padding: 0 2px;
+  font-size: inherit;
+}
 
 .cm-menu-button { display: none; }
 
@@ -100,16 +147,22 @@ a:hover { color: #cc9900; }
   .cm-sidebar.is-open { transform: translateX(0); }
   .cm-menu-button { display: inline-flex; min-height: 42px; align-items: center; }
   .cm-toolbar { padding: 10px; }
-  .cm-content { padding: 8px; }
-  .legacy-content { padding: 8px; }
-  .legacy-header img { min-height: 74px; object-fit: cover; object-position: left center; }
-  .legacy-table th, .legacy-table td { padding: 7px 5px; }
+  .cm-content { padding: 6px; }
+  .legacy-content { padding: 4px; font-size: 13px; }
+  .legacy-table { font-size: 11px; }
+  .legacy-table th, .legacy-table td { padding: 2px 3px; }
+  .legacy-table tr > :first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: #eee9d6;
+  }
 }
 
 @media print {
   .cm-sidebar, .cm-toolbar { display: none !important; }
   .cm-app { display: block; }
   .cm-content { max-width: none; padding: 0; }
-  .legacy-content { border: 0; background: white; }
+  .legacy-content { border: 0; background: white; color: black; }
   .quick-sections, .legacy-note { display: none; }
 }
