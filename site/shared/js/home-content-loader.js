@@ -9,17 +9,44 @@
     ? '../../sourse/desktop/Справочник от 09.12.2024 HTML/'
     : '../../sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML/';
   const sourceUrl = new URL(`${sourceRoot}index.html`, window.location.href);
+  const rootUrl = new URL(sourceRoot, window.location.href);
+
+  function isExternal(value) {
+    return /^(?:https?:|mailto:|tel:|javascript:|data:)/i.test(value);
+  }
+
+  function sourceRelativePath(url) {
+    if (url.origin !== rootUrl.origin || !url.pathname.startsWith(rootUrl.pathname)) return null;
+    return decodeURIComponent(url.pathname.slice(rootUrl.pathname.length));
+  }
 
   function rewriteResourceUrls(root) {
-    root.querySelectorAll('[href]').forEach((node) => {
+    root.querySelectorAll('a[href]').forEach((node) => {
       const value = node.getAttribute('href');
-      if (!value || value.startsWith('#') || /^(?:https?:|mailto:|javascript:)/i.test(value)) return;
-      node.href = new URL(value, sourceUrl).href;
+      if (!value || value.startsWith('#') || isExternal(value)) return;
+
+      const target = new URL(value, sourceUrl);
+      const relative = sourceRelativePath(target);
+      if (!relative) {
+        node.href = target.href;
+        return;
+      }
+
+      if (/\.html?$/i.test(relative)) {
+        if (/^index\.html?$/i.test(relative)) {
+          node.href = 'index.html';
+        } else {
+          node.href = `page.html?src=${encodeURIComponent(relative)}`;
+        }
+        return;
+      }
+
+      node.href = target.href;
     });
 
     root.querySelectorAll('[src]').forEach((node) => {
       const value = node.getAttribute('src');
-      if (!value || /^(?:https?:|data:)/i.test(value)) return;
+      if (!value || isExternal(value)) return;
       node.src = new URL(value, sourceUrl).href;
     });
   }
