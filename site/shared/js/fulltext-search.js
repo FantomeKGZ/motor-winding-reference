@@ -8,6 +8,14 @@
     .find((part) => part === 'desktop' || part === 'mobile');
   if (!current) return;
 
+  if (!document.querySelector('link[data-search-filters-style]')) {
+    const style = document.createElement('link');
+    style.rel = 'stylesheet';
+    style.href = '../shared/css/search-filters.css';
+    style.dataset.searchFiltersStyle = '';
+    document.head.appendChild(style);
+  }
+
   const INDEX_URL = `../shared/data/${current}-search-index.json`;
   const MIN_QUERY_LENGTH = 3;
   const MAX_RESULTS = 12;
