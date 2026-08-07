@@ -28,8 +28,6 @@
     const cells = Array.from(row?.querySelectorAll('th, td') || []);
     if (!cells.length) return null;
 
-    // In the original handbook the slot count is normally the first numeric
-    // value of the row. We keep this as a hint only and never invent a value.
     for (const cell of cells.slice(0, 2)) {
       const values = numberTokens(cell.textContent);
       const plausible = values.find((value) => value >= 6 && value <= 200);
@@ -82,8 +80,6 @@
     if (Number.isFinite(wantedSlots) && link.slots === wantedSlots) score += 100;
     if (Number.isFinite(wantedRpm) && link.rpm === wantedRpm) score += 100;
 
-    // Pole count is intentionally only a weak secondary hint. The original
-    // homepage is organised primarily by slot count and speed.
     if (Number.isFinite(wantedPoles)) {
       const contextNumbers = numberTokens(`${link.rowText} ${link.text} ${link.target}`);
       if (contextNumbers.includes(wantedPoles)) score += 10;
@@ -97,6 +93,29 @@
       .map((link) => ({ link, score: scoreLink(link, motor) }))
       .filter((entry) => entry.score >= 200)
       .sort((a, b) => b.score - a.score || String(a.link.text || '').localeCompare(String(b.link.text || ''), 'ru'));
+  }
+
+  function evaluateExpectation(testCase, matches) {
+    const expected = testCase.expected || {};
+    const min = Number.isFinite(Number(expected.min_matches)) ? Number(expected.min_matches) : null;
+    const max = Number.isFinite(Number(expected.max_matches)) ? Number(expected.max_matches) : null;
+    const count = matches.length;
+
+    const minOk = min == null || count >= min;
+    const maxOk = max == null || count <= max;
+    return {
+      passed: minOk && maxOk,
+      min,
+      max,
+      count,
+    };
+  }
+
+  function expectationText(result) {
+    const parts = [];
+    if (result.expectation.min != null) parts.push(`не меньше ${result.expectation.min}`);
+    if (result.expectation.max != null) parts.push(`не больше ${result.expectation.max}`);
+    return parts.length ? `ожидалось ${parts.join(', ')}` : 'без заданного ожидания';
   }
 
   function resultList(matches) {
@@ -115,7 +134,7 @@
     return list;
   }
 
-  function makePanel(mock, liveLinks, testResults) {
+  function makePanel(liveLinks, testResults) {
     const panel = document.createElement('section');
     panel.className = 'legacy-note';
     panel.dataset.esp32Test = '';
@@ -124,23 +143,23 @@
     heading.textContent = 'Тест сопоставления ESP32 → справочник';
     panel.appendChild(heading);
 
+    const passed = testResults.filter((item) => item.expectation.passed).length;
+    const failed = testResults.length - passed;
     const summary = document.createElement('p');
-    const passed = testResults.filter((item) => item.matches.length > 0).length;
-    summary.textContent = `Проверено ссылок: ${liveLinks.length}. Контрольных наборов: ${testResults.length}. С результатом: ${passed}.`;
+    summary.textContent = `Проверено ссылок: ${liveLinks.length}. Тестов: ${testResults.length}. Пройдено: ${passed}. Ошибок: ${failed}.`;
     panel.appendChild(summary);
 
     testResults.forEach((result) => {
       const block = document.createElement('div');
       block.className = 'cm-esp32-test-case';
+      block.dataset.testStatus = result.expectation.passed ? 'pass' : 'fail';
 
       const title = document.createElement('strong');
-      title.textContent = `${result.motor.slots ?? '—'} пазов / ${result.motor.rpm ?? '—'} об/мин`;
+      title.textContent = `${result.expectation.passed ? '✓' : '✕'} ${result.motor.slots ?? '—'} пазов / ${result.motor.rpm ?? '—'} об/мин`;
       block.appendChild(title);
 
       const status = document.createElement('p');
-      status.textContent = result.matches.length
-        ? `Найдено кандидатов: ${result.matches.length}. Автоматический выбор не выполняется.`
-        : 'Подходящих страниц не найдено. Ничего автоматически не выбрано.';
+      status.textContent = `Найдено кандидатов: ${result.matches.length}; ${expectationText(result)}.`;
       block.appendChild(status);
 
       if (result.matches.length) block.appendChild(resultList(result.matches));
@@ -148,7 +167,7 @@
     });
 
     const warning = document.createElement('p');
-    warning.textContent = 'Это проверка навигации по существующей таблице. Совпадение по пазам и оборотам ещё не означает, что конкретный вариант укладки подходит двигателю.';
+    warning.textContent = 'Тест проверяет только выбор группы по пазам и оборотам. Конкретный вариант укладки автоматически не выбирается.';
     panel.appendChild(warning);
 
     return panel;
@@ -170,12 +189,21 @@
         ? mock.test_cases
         : [mock.motor || {}];
 
-      const testResults = testCases.map((motor) => ({ motor, matches: findMatches(liveLinks, motor) }));
-      host.prepend(makePanel(mock, liveLinks, testResults));
+      const testResults = testCases.map((motor) => {
+        const matches = findMatches(liveLinks, motor);
+        return {
+          motor,
+          matches,
+          expectation: evaluateExpectation(motor, matches),
+        };
+      });
+
+      host.prepend(makePanel(liveLinks, testResults));
 
       window.CoilMasterEsp32TestResult = {
         mock,
         linkCount: liveLinks.length,
+        passed: testResults.every((item) => item.expectation.passed),
         testResults,
       };
       document.dispatchEvent(new CustomEvent('coilmaster:esp32-test-result', {
