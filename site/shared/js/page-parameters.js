@@ -57,6 +57,44 @@
     return '';
   }
 
+  function numberFrom(value) {
+    if (!value) return null;
+    const match = String(value).replace(',', '.').match(/-?\d+(?:\.\d+)?/);
+    return match ? Number(match[0]) : null;
+  }
+
+  function buildSchemeContext(values) {
+    const raw = Object.fromEntries(values.map((item) => [item.key, item.value]));
+    const params = new URLSearchParams(window.location.search);
+    const sourcePath = (params.get('src') || '').replace(/^\/+/, '');
+
+    return {
+      version: 1,
+      source: 'legacy-handbook',
+      source_path: sourcePath || null,
+      title: document.title.replace(/\s+[—-]\s+CoilMaster\s*$/i, '').trim(),
+      slots: numberFrom(raw.slots),
+      rpm: numberFrom(raw.rpm),
+      poles: numberFrom(raw.poles),
+      q: numberFrom(raw.q),
+      phase_start: raw.phaseStart || null,
+      raw,
+    };
+  }
+
+  function publishSchemeContext(context, section) {
+    window.CoilMasterSchemeContext = context;
+    section.dataset.schemeContextVersion = String(context.version);
+    if (context.slots != null) section.dataset.slots = String(context.slots);
+    if (context.rpm != null) section.dataset.rpm = String(context.rpm);
+    if (context.poles != null) section.dataset.poles = String(context.poles);
+    if (context.q != null) section.dataset.q = String(context.q);
+
+    document.dispatchEvent(new CustomEvent('coilmaster:scheme-context', {
+      detail: context,
+    }));
+  }
+
   function buildParameterBar(root) {
     const rows = extractRows(root);
     const values = PARAMETER_ALIASES
@@ -91,7 +129,7 @@
     });
 
     section.append(title, list);
-    return section;
+    return { section, context: buildSchemeContext(values) };
   }
 
   function install() {
@@ -99,12 +137,14 @@
     const original = host.querySelector('.original-page-content');
     if (!original) return;
 
-    const bar = buildParameterBar(original);
-    if (!bar) return;
+    const result = buildParameterBar(original);
+    if (!result) return;
 
     const controls = host.querySelector('.legacy-page-controls');
-    if (controls) controls.insertAdjacentElement('afterend', bar);
-    else host.prepend(bar);
+    if (controls) controls.insertAdjacentElement('afterend', result.section);
+    else host.prepend(result.section);
+
+    publishSchemeContext(result.context, result.section);
   }
 
   document.addEventListener('handbook:content-loaded', install);
