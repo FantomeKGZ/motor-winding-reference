@@ -35,6 +35,7 @@
 
     const widget = requirePart('Motor scheme widget', window.CoilMasterMotorSchemeWidget);
     const bindingClient = requirePart('Motor binding client', window.CoilMasterMotorBindingClient);
+    const catalogClient = window.CoilMasterSchemeCatalogClient || null;
     const motorId = normalizeMotorId(options.motorId || options.motor?.id || options.motor?.motor_id);
     const state = {
       motorId,
@@ -46,6 +47,7 @@
       connection: null,
       busy: false,
       lastError: null,
+      catalogError: null,
     };
 
     function resolveCatalogEntities() {
@@ -74,7 +76,8 @@
         onRemove: remove,
       });
 
-      if (message || state.lastError) {
+      const statusMessage = state.lastError?.message || message || state.catalogError?.message || '';
+      if (statusMessage) {
         let status = container.querySelector('.cm-msw-controller-status');
         if (!status) {
           status = document.createElement('div');
@@ -82,8 +85,21 @@
           status.setAttribute('role', 'status');
           container.append(status);
         }
-        status.textContent = state.lastError?.message || message;
+        status.textContent = statusMessage;
       }
+    }
+
+    async function loadCandidates() {
+      if (state.candidates.length || !catalogClient?.findCandidates) return state.candidates;
+      state.catalogError = null;
+      try {
+        state.candidates = await catalogClient.findCandidates(state.motor, options.catalogOptions || {});
+        notify('coilmaster:motor-scheme-candidates-loaded', { candidates: state.candidates });
+      } catch (error) {
+        state.catalogError = error;
+        notify('coilmaster:motor-scheme-catalog-error', { error });
+      }
+      return state.candidates;
     }
 
     async function refresh() {
@@ -91,6 +107,7 @@
       state.lastError = null;
       render('Загрузка привязки…');
       try {
+        await loadCandidates();
         const response = await bindingClient.getBinding(state.motorId);
         const result = unwrapBindingResponse(response);
         state.binding = result.binding;
@@ -167,21 +184,29 @@
 
     function setCandidates(candidates) {
       state.candidates = Array.isArray(candidates) ? candidates : [];
+      state.catalogError = null;
       render();
     }
 
-    function setMotor(motor) {
+    async function setMotor(motor, reloadCandidates = true) {
       state.motor = motor || {};
+      if (reloadCandidates) {
+        state.candidates = [];
+        await loadCandidates();
+      }
       render();
     }
 
     render();
+    await loadCandidates();
     if (options.autoLoad !== false && !state.binding) await refresh();
+    else render();
 
     return Object.freeze({
       getState: () => ({ ...state }),
       refresh,
       remove,
+      loadCandidates,
       setCandidates,
       setMotor,
       render,
