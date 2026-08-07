@@ -161,13 +161,31 @@ def first_float(pattern: re.Pattern, text: str) -> float | None:
     return float(match.group(1).replace(",", ".")) if match else None
 
 
+def connection_option_id(page: str, kind: str | None, image: str | None) -> str:
+    """Stable identity for one selectable connection option.
+
+    Prefer the concrete page + image + kind triple. If an old page does not
+    expose a separable image, page + kind remains deterministic. If even the
+    kind is unknown, the page itself becomes one page-level option rather than
+    silently losing the connection reference.
+    """
+    return stable_id("CM-CON", page, image or "", kind or "unknown")
+
+
 def inspect_connection(root: Path, href: str, cache: dict[str, dict]) -> dict:
     target = norm_path(href)
     if target in cache:
         return cache[target]
     path = root / target
     if not path.is_file():
-        result = {"page": target, "missing": True, "types": [], "images": []}
+        result = {
+            "page": target,
+            "page_id": stable_id("CM-CON-PAGE", target),
+            "missing": True,
+            "types": [],
+            "images": [],
+            "options": [],
+        }
         cache[target] = result
         return result
 
@@ -192,13 +210,68 @@ def inspect_connection(root: Path, href: str, cache: dict[str, dict]) -> dict:
                 if image_key in seen_images:
                     continue
                 seen_images.add(image_key)
-                images.append({"type": kind, "image": image_src, "description": ptext})
+                images.append({
+                    "connection_id": connection_option_id(target, kind, image_src),
+                    "type": kind,
+                    "image": image_src,
+                    "description": ptext,
+                })
+
+    options: list[dict] = []
+    seen_options: set[str] = set()
+
+    # Concrete image-backed options are preferred.
+    for image in images:
+        cid = image["connection_id"]
+        if cid in seen_options:
+            continue
+        seen_options.add(cid)
+        options.append({
+            "connection_id": cid,
+            "type": image["type"],
+            "image": image["image"],
+            "description": image["description"],
+            "scope": "image",
+        })
+
+    # Some old pages name a connection type but do not allow a reliable
+    # paragraph-to-image association. Preserve that type as a page-level
+    # selectable option instead of inventing an image mapping.
+    image_types = {item["type"] for item in images}
+    for kind in sorted(set(types)):
+        if kind in image_types:
+            continue
+        cid = connection_option_id(target, kind, None)
+        if cid in seen_options:
+            continue
+        seen_options.add(cid)
+        options.append({
+            "connection_id": cid,
+            "type": kind,
+            "image": None,
+            "description": doc.title,
+            "scope": "page",
+        })
+
+    # A referenced ss*.html page with no safely classified type is still a
+    # real connection reference. Represent it as one unknown page-level option.
+    if not options:
+        cid = connection_option_id(target, None, None)
+        options.append({
+            "connection_id": cid,
+            "type": None,
+            "image": None,
+            "description": doc.title,
+            "scope": "page",
+        })
 
     result = {
         "page": target,
+        "page_id": stable_id("CM-CON-PAGE", target),
         "title": doc.title,
         "types": sorted(set(types)),
         "images": images,
+        "options": options,
         "special": special_hints(f"{doc.title} {page_text}"),
     }
     cache[target] = result
@@ -243,9 +316,8 @@ def variants_from_page(root: Path, path: Path, connection_cache: dict[str, dict]
         pitch_match = PITCH_RE.search(description)
         branches = sorted({int(m.group(1)) for m in BRANCH_RE.finditer(description)})
 
-        # One paragraph may repeat the same ss*.html href several times (for
-        # example once per a=1/a=2 label). The catalog must report distinct
-        # connection pages, not duplicate anchors to the same page.
+        # One paragraph may repeat the same ss*.html href several times. The
+        # catalog reports distinct physical connection pages.
         connection_targets: list[str] = []
         seen_connection_targets: set[str] = set()
         for link in paragraph["links"]:
@@ -260,6 +332,20 @@ def variants_from_page(root: Path, path: Path, connection_cache: dict[str, dict]
 
         conn_pages = [inspect_connection(root, href, connection_cache) for href in connection_targets]
 
+        connection_options: list[dict] = []
+        seen_connection_ids: set[str] = set()
+        for connection_page in conn_pages:
+            for option in connection_page.get("options", []):
+                cid = option.get("connection_id")
+                if not cid or cid in seen_connection_ids:
+                    continue
+                seen_connection_ids.add(cid)
+                connection_options.append({
+                    **option,
+                    "page": connection_page["page"],
+                    "page_id": connection_page["page_id"],
+                })
+
         scheme = {
             "scheme_id": stable_id("CM-SCH", target, image),
             "legacy_page": target,
@@ -271,6 +357,8 @@ def variants_from_page(root: Path, path: Path, connection_cache: dict[str, dict]
             "parallel_branches": branches,
             "connections": conn_pages,
             "connection_count": len(conn_pages),
+            "connection_options": connection_options,
+            "connection_option_count": len(connection_options),
             "special": special_hints(description),
         }
         variants.append(scheme)
@@ -298,18 +386,30 @@ def build(root: Path) -> dict:
 
     schemes.sort(key=lambda item: (item.get("slots") or 0, item.get("rpm") or 0, item["legacy_page"], item["image"]))
     connection_counts = [item["connection_count"] for item in schemes]
+    option_counts = [item["connection_option_count"] for item in schemes]
+    unique_connection_ids = {
+        option["connection_id"]
+        for item in schemes
+        for option in item.get("connection_options", [])
+        if option.get("connection_id")
+    }
     return {
-        "version": 2,
+        "version": 3,
         "generator": "tools/build_scheme_catalog.py",
         "stats": {
             "pages_scanned": pages_scanned,
             "pages_with_variants": pages_with_variants,
             "schemes": len(schemes),
             "connection_pages": len(connection_cache),
+            "connection_options": len(unique_connection_ids),
             "schemes_without_connection_pages": sum(1 for count in connection_counts if count == 0),
             "schemes_with_one_connection_page": sum(1 for count in connection_counts if count == 1),
             "schemes_with_multiple_connection_pages": sum(1 for count in connection_counts if count > 1),
             "max_connection_pages_per_scheme": max(connection_counts, default=0),
+            "schemes_without_connection_options": sum(1 for count in option_counts if count == 0),
+            "schemes_with_one_connection_option": sum(1 for count in option_counts if count == 1),
+            "schemes_with_multiple_connection_options": sum(1 for count in option_counts if count > 1),
+            "max_connection_options_per_scheme": max(option_counts, default=0),
         },
         "schemes": schemes,
     }
@@ -331,7 +431,8 @@ def main() -> int:
         print(
             f"{name}: {stats['schemes']} schemes; "
             f"{stats['connection_pages']} connection pages; "
-            f"multi={stats['schemes_with_multiple_connection_pages']} -> {out}"
+            f"{stats['connection_options']} connection options; "
+            f"multi-pages={stats['schemes_with_multiple_connection_pages']} -> {out}"
         )
     return 0
 
