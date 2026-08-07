@@ -8,6 +8,7 @@ on:
       - 'tools/build_home_tables.py'
       - 'tools/build_image_inventory.py'
       - 'tools/build_page_inventory.py'
+      - 'tools/build_search_index.py'
       - '.github/workflows/validate-handbook-links.yml'
   workflow_dispatch:
 
@@ -54,6 +55,13 @@ jobs:
             --desktop-root 'sourse/desktop/Справочник от 09.12.2024 HTML' \
             --mobile-root 'sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML' \
             --output site/shared/data/page-inventory.json
+
+      - name: Build full-text search indexes
+        run: |
+          python tools/build_search_index.py \
+            --desktop-root 'sourse/desktop/Справочник от 09.12.2024 HTML' \
+            --mobile-root 'sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML' \
+            --output site/shared/data
 
       - name: Upload generated reports
         if: always()
