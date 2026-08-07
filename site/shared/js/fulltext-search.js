@@ -23,6 +23,11 @@
       .trim();
   }
 
+  function isTableParameterQuery(query) {
+    const tokens = query.split(' ').filter(Boolean);
+    return tokens.length >= 2 && tokens.every((token) => /^\d+$/.test(token));
+  }
+
   function getResultsHost() {
     let host = document.querySelector('[data-fulltext-results]');
     if (host) return host;
@@ -36,6 +41,11 @@
     const toolbar = document.querySelector('.cm-toolbar');
     toolbar?.insertAdjacentElement('afterend', host);
     return host;
+  }
+
+  function hideResults() {
+    const host = document.querySelector('[data-fulltext-results]');
+    if (host) host.hidden = true;
   }
 
   async function loadIndex() {
@@ -53,7 +63,9 @@
   function scoreItem(item, tokens, normalizedQuery) {
     const title = normalize(item.title);
     const path = normalize(item.path);
-    const text = normalize(item.text || item.content || item.snippet);
+    // build_search_index.py stores the searchable body in `search`.
+    // Keep fallbacks for older/generated index formats.
+    const text = normalize(item.search || item.text || item.content || item.excerpt || item.snippet);
     const haystack = `${title} ${path} ${text}`;
     if (!tokens.every((token) => haystack.includes(token))) return -1;
 
@@ -61,6 +73,8 @@
     if (title === normalizedQuery) score += 120;
     if (title.includes(normalizedQuery)) score += 70;
     if (path.includes(normalizedQuery)) score += 35;
+    if (text.includes(normalizedQuery)) score += 20;
+
     tokens.forEach((token) => {
       if (title.includes(token)) score += 18;
       if (path.includes(token)) score += 8;
@@ -70,17 +84,22 @@
   }
 
   function makeSnippet(item, tokens) {
-    const source = String(item.snippet || item.text || item.content || '').replace(/\s+/g, ' ').trim();
+    // `excerpt` is the human-readable source produced by build_search_index.py.
+    const source = String(item.excerpt || item.snippet || item.text || item.content || '')
+      .replace(/\s+/g, ' ')
+      .trim();
     if (!source) return '';
+
     const lower = source.toLocaleLowerCase('ru-RU');
     let at = -1;
     for (const token of tokens) {
       const found = lower.indexOf(token);
       if (found >= 0 && (at < 0 || found < at)) at = found;
     }
-    if (at < 0) return source.slice(0, 220);
-    const start = Math.max(0, at - 80);
-    const end = Math.min(source.length, at + 180);
+
+    if (at < 0) return source.slice(0, 240);
+    const start = Math.max(0, at - 90);
+    const end = Math.min(source.length, at + 190);
     return `${start ? '…' : ''}${source.slice(start, end)}${end < source.length ? '…' : ''}`;
   }
 
@@ -96,13 +115,15 @@
     header.className = 'cm-fulltext-results-header';
 
     const title = document.createElement('strong');
-    title.textContent = `Поиск по всему справочнику: ${items.length ? `показано ${Math.min(items.length, MAX_RESULTS)}` : 'ничего не найдено'}`;
+    title.textContent = items.length
+      ? `Поиск по всему справочнику: найдено ${items.length}, показано ${Math.min(items.length, MAX_RESULTS)}`
+      : 'Поиск по всему справочнику: ничего не найдено';
 
     const close = document.createElement('button');
     close.type = 'button';
     close.className = 'cm-fulltext-close';
     close.textContent = 'Закрыть';
-    close.addEventListener('click', () => { host.hidden = true; });
+    close.addEventListener('click', hideResults);
 
     header.append(title, close);
     host.appendChild(header);
@@ -143,9 +164,11 @@
 
   async function runSearch() {
     const query = normalize(input.value);
-    if (query.length < MIN_QUERY_LENGTH) {
-      const host = document.querySelector('[data-fulltext-results]');
-      if (host) host.hidden = true;
+
+    // Queries such as "24 3000" are handled by the original table search.
+    // Do not cover the familiar table with a second result panel.
+    if (query.length < MIN_QUERY_LENGTH || isTableParameterQuery(query)) {
+      hideResults();
       return;
     }
 
@@ -155,10 +178,11 @@
       const ranked = index
         .map((item) => ({ item, score: scoreItem(item, tokens, query) }))
         .filter((entry) => entry.score >= 0)
-        .sort((a, b) => b.score - a.score)
+        .sort((a, b) => b.score - a.score || String(a.item.title || '').localeCompare(String(b.item.title || ''), 'ru'))
         .map((entry) => entry.item);
       renderResults(ranked, input.value.trim(), tokens);
     } catch (error) {
+      hideResults();
       console.warn('Full-text index is unavailable:', error);
     }
   }
@@ -169,9 +193,6 @@
   });
 
   input.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
-      const host = document.querySelector('[data-fulltext-results]');
-      if (host) host.hidden = true;
-    }
+    if (event.key === 'Escape') hideResults();
   });
 })();
