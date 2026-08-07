@@ -180,11 +180,15 @@
   }
 
   function loadScriptOnce(src) {
-    if (document.querySelector(`script[src$="${src.split('/').pop()}"]`)) return;
-    const script = document.createElement('script');
-    script.src = src;
-    script.defer = true;
-    document.body.appendChild(script);
+    if (document.querySelector(`script[src$="${src.split('/').pop()}"]`)) return Promise.resolve();
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = src;
+      script.defer = true;
+      script.addEventListener('load', resolve, { once: true });
+      script.addEventListener('error', resolve, { once: true });
+      document.body.appendChild(script);
+    });
   }
 
   function loadStyleOnce(href) {
@@ -206,7 +210,8 @@
   loadScriptOnce('../shared/js/recent-history.js');
   loadScriptOnce('../shared/js/favorites.js');
   loadScriptOnce('../shared/js/page-parameters.js');
-  loadScriptOnce('../shared/js/esp32-scheme-matcher.js');
+  loadScriptOnce('../shared/js/esp32-client.js')
+    .then(() => loadScriptOnce('../shared/js/esp32-scheme-matcher.js'));
 
   if (!button || !sidebar) return;
 
