@@ -8,8 +8,6 @@
     .find((part) => part === 'desktop' || part === 'mobile');
   if (!current || !/\/index\.html$/i.test(window.location.pathname)) return;
 
-  const MOCK_URL = '../shared/data/esp32-mock.json';
-
   function numberTokens(value) {
     return (String(value || '').match(/\d+/g) || []).map(Number);
   }
@@ -95,29 +93,6 @@
       .sort((a, b) => b.score - a.score || String(a.link.text || '').localeCompare(String(b.link.text || ''), 'ru'));
   }
 
-  function evaluateExpectation(testCase, matches) {
-    const expected = testCase.expected || {};
-    const min = Number.isFinite(Number(expected.min_matches)) ? Number(expected.min_matches) : null;
-    const max = Number.isFinite(Number(expected.max_matches)) ? Number(expected.max_matches) : null;
-    const count = matches.length;
-
-    const minOk = min == null || count >= min;
-    const maxOk = max == null || count <= max;
-    return {
-      passed: minOk && maxOk,
-      min,
-      max,
-      count,
-    };
-  }
-
-  function expectationText(result) {
-    const parts = [];
-    if (result.expectation.min != null) parts.push(`не меньше ${result.expectation.min}`);
-    if (result.expectation.max != null) parts.push(`не больше ${result.expectation.max}`);
-    return parts.length ? `ожидалось ${parts.join(', ')}` : 'без заданного ожидания';
-  }
-
   function resultList(matches) {
     const list = document.createElement('ol');
     matches.slice(0, 10).forEach(({ link, score }) => {
@@ -134,7 +109,7 @@
     return list;
   }
 
-  function makePanel(liveLinks, testResults) {
+  function makePanel(mock, liveLinks, testResults, clientMeta) {
     const panel = document.createElement('section');
     panel.className = 'legacy-note';
     panel.dataset.esp32Test = '';
@@ -143,23 +118,27 @@
     heading.textContent = 'Тест сопоставления ESP32 → справочник';
     panel.appendChild(heading);
 
-    const passed = testResults.filter((item) => item.expectation.passed).length;
-    const failed = testResults.length - passed;
+    const source = document.createElement('p');
+    source.textContent = `Источник данных: ${clientMeta.mode}. Получено: ${clientMeta.receivedAt}.`;
+    panel.appendChild(source);
+
     const summary = document.createElement('p');
-    summary.textContent = `Проверено ссылок: ${liveLinks.length}. Тестов: ${testResults.length}. Пройдено: ${passed}. Ошибок: ${failed}.`;
+    const passed = testResults.filter((item) => item.passed).length;
+    summary.textContent = `Проверено ссылок: ${liveLinks.length}. Тестов: ${testResults.length}. Успешно: ${passed}. Ошибок: ${testResults.length - passed}.`;
     panel.appendChild(summary);
 
     testResults.forEach((result) => {
       const block = document.createElement('div');
       block.className = 'cm-esp32-test-case';
-      block.dataset.testStatus = result.expectation.passed ? 'pass' : 'fail';
 
       const title = document.createElement('strong');
-      title.textContent = `${result.expectation.passed ? '✓' : '✕'} ${result.motor.slots ?? '—'} пазов / ${result.motor.rpm ?? '—'} об/мин`;
+      title.textContent = `${result.passed ? '✓' : '✕'} ${result.motor.slots ?? '—'} пазов / ${result.motor.rpm ?? '—'} об/мин`;
       block.appendChild(title);
 
       const status = document.createElement('p');
-      status.textContent = `Найдено кандидатов: ${result.matches.length}; ${expectationText(result)}.`;
+      status.textContent = result.expectNoMatches
+        ? (result.matches.length ? `Ошибка: найдено кандидатов ${result.matches.length}, ожидалось 0.` : 'Проверка пройдена: ложных совпадений нет.')
+        : (result.matches.length ? `Найдено кандидатов: ${result.matches.length}. Автоматический выбор не выполняется.` : 'Ошибка: подходящих страниц не найдено.');
       block.appendChild(status);
 
       if (result.matches.length) block.appendChild(resultList(result.matches));
@@ -167,7 +146,7 @@
     });
 
     const warning = document.createElement('p');
-    warning.textContent = 'Тест проверяет только выбор группы по пазам и оборотам. Конкретный вариант укладки автоматически не выбирается.';
+    warning.textContent = 'Совпадение по пазам и оборотам определяет только группу схем. Конкретный вариант укладки выбирается после проверки остальных параметров обмотки.';
     panel.appendChild(warning);
 
     return panel;
@@ -180,30 +159,32 @@
     const liveLinks = collectLiveLinks();
     if (!liveLinks.length) return;
 
-    try {
-      const mockResponse = await fetch(MOCK_URL);
-      if (!mockResponse.ok) throw new Error(`mock HTTP ${mockResponse.status}`);
+    const client = window.CoilMasterEsp32Client;
+    if (!client) {
+      console.warn('ESP32 client is unavailable');
+      return;
+    }
 
-      const mock = await mockResponse.json();
+    try {
+      const context = await client.getContext({ mode: 'mock' });
+      const mock = context.payload;
       const testCases = Array.isArray(mock.test_cases) && mock.test_cases.length
         ? mock.test_cases
         : [mock.motor || {}];
 
       const testResults = testCases.map((motor) => {
         const matches = findMatches(liveLinks, motor);
-        return {
-          motor,
-          matches,
-          expectation: evaluateExpectation(motor, matches),
-        };
+        const expectNoMatches = motor.expect_matches === 0;
+        const passed = expectNoMatches ? matches.length === 0 : matches.length > 0;
+        return { motor, matches, expectNoMatches, passed };
       });
 
-      host.prepend(makePanel(liveLinks, testResults));
+      host.prepend(makePanel(mock, liveLinks, testResults, context));
 
       window.CoilMasterEsp32TestResult = {
         mock,
+        client: context,
         linkCount: liveLinks.length,
-        passed: testResults.every((item) => item.expectation.passed),
         testResults,
       };
       document.dispatchEvent(new CustomEvent('coilmaster:esp32-test-result', {
