@@ -84,6 +84,32 @@
     return controls;
   }
 
+  function installBackToTop() {
+    if (document.querySelector('[data-back-to-top]')) return;
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'cm-back-to-top';
+    button.dataset.backToTop = '';
+    button.hidden = true;
+    button.setAttribute('aria-label', 'Наверх');
+    button.title = 'Наверх';
+    button.textContent = '↑';
+
+    const updateVisibility = () => {
+      button.hidden = window.scrollY < 700;
+    };
+
+    button.addEventListener('click', () => {
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+    });
+
+    window.addEventListener('scroll', updateVisibility, { passive: true });
+    updateVisibility();
+    document.body.appendChild(button);
+  }
+
   function prepareContent(sourceDocument) {
     const sourceContent = sourceDocument.querySelector('.content') || sourceDocument.body;
     const wrapper = document.createElement('div');
@@ -132,6 +158,7 @@
 
       const content = prepareContent(sourceDocument);
       host.replaceChildren(buildPageControls(), content);
+      installBackToTop();
       document.dispatchEvent(new CustomEvent('handbook:content-loaded'));
     } catch (error) {
       host.innerHTML = '<p class="legacy-note">Не удалось открыть страницу справочника. Исходный файл не изменён; можно вернуться на главную и выбрать другую схему.</p>';
