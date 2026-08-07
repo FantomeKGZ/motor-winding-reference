@@ -24,11 +24,23 @@
     });
   }
 
+  function removeLegacyBanner(root) {
+    root.querySelectorAll('img').forEach((image) => {
+      const src = (image.getAttribute('src') || '').toLowerCase();
+      const alt = (image.getAttribute('alt') || '').toLowerCase();
+      if (src.includes('verh.') || alt.includes('справочник обмотчика асинхронных электродвигателей')) {
+        const container = image.closest('div, p, table, center') || image;
+        container.remove();
+      }
+    });
+  }
+
   function prepareOriginalContent(sourceContent) {
     const wrapper = document.createElement('div');
     wrapper.className = 'original-home-content';
     wrapper.innerHTML = sourceContent.innerHTML;
     rewriteResourceUrls(wrapper);
+    removeLegacyBanner(wrapper);
 
     wrapper.querySelectorAll('table').forEach((table) => {
       table.classList.add('legacy-table');
@@ -49,11 +61,7 @@
   }
 
   async function loadOriginalHome() {
-    const loading = document.createElement('p');
-    loading.className = 'legacy-note';
-    loading.dataset.homeLoading = '';
-    loading.textContent = 'Загрузка полной оригинальной главной страницы…';
-    host.appendChild(loading);
+    host.innerHTML = '<p class="legacy-loading">Загрузка справочника…</p>';
 
     try {
       const response = await fetch(sourceUrl);
@@ -65,21 +73,10 @@
       const sourceContent = sourceDocument.querySelector('.content') || sourceDocument.body;
       const original = prepareOriginalContent(sourceContent);
 
-      const temporary = host.querySelector('h2#schemes');
-      if (temporary) {
-        let node = temporary;
-        while (node) {
-          const next = node.nextSibling;
-          node.remove();
-          node = next;
-        }
-      }
-
-      loading.remove();
-      host.appendChild(original);
+      host.replaceChildren(original);
       document.dispatchEvent(new CustomEvent('handbook:content-loaded'));
     } catch (error) {
-      loading.textContent = 'Не удалось загрузить полную оригинальную страницу. Временная таблица оставлена доступной.';
+      host.innerHTML = '<p class="legacy-note">Не удалось загрузить оригинальную главную страницу.</p>';
       console.error('Handbook home loading failed:', error);
     }
   }
