@@ -1,0 +1,38 @@
+.cm-recent-nav a {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+.cm-recent-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cm-recent-nav small {
+  color: #b8c2cc;
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+.cm-recent-clear {
+  width: 100%;
+  margin-top: 5px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #b8c2cc;
+  text-align: left;
+  font: inherit;
+  font-size: .78rem;
+  cursor: pointer;
+}
+.cm-recent-clear:hover,
+.cm-recent-clear:focus-visible {
+  background: rgba(255,255,255,.08);
+  color: #fff;
+  outline: none;
+}
