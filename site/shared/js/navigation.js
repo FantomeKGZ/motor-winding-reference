@@ -215,13 +215,19 @@
   loadScriptOnce('../shared/js/favorites.js');
   loadScriptOnce('../shared/js/page-parameters.js');
   loadScriptOnce('../shared/js/special-scheme-classifier.js');
-  loadScriptOnce('../shared/js/scheme-picker.js').then(() => loadScriptOnce('../shared/js/motor-scheme-widget.js'));
-  loadScriptOnce('../shared/js/esp32-client.js')
+
+  const schemeUiReady = loadScriptOnce('../shared/js/scheme-picker.js')
+    .then(() => loadScriptOnce('../shared/js/motor-scheme-widget.js'));
+
+  const esp32Ready = loadScriptOnce('../shared/js/esp32-client.js')
     .then(() => Promise.all([
       loadScriptOnce('../shared/js/esp32-panel.js'),
       loadScriptOnce('../shared/js/esp32-scheme-matcher.js'),
       loadScriptOnce('../shared/js/motor-binding-client.js'),
     ]));
+
+  Promise.all([schemeUiReady, esp32Ready])
+    .then(() => loadScriptOnce('../shared/js/motor-scheme-controller.js'));
 
   if (!button || !sidebar) return;
 
