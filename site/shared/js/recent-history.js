@@ -9,6 +9,13 @@
 
   if (!sidebar || !current) return;
 
+  if (!document.querySelector('link[href$="recent-history.css"]')) {
+    const style = document.createElement('link');
+    style.rel = 'stylesheet';
+    style.href = '../shared/css/recent-history.css';
+    document.head.appendChild(style);
+  }
+
   function readHistory() {
     try {
       const value = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || '[]');
