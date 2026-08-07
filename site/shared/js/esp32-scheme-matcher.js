@@ -9,10 +9,40 @@
   if (!current || !/\/index\.html$/i.test(window.location.pathname)) return;
 
   const MOCK_URL = '../shared/data/esp32-mock.json';
-  const LINKS_URL = `../shared/data/${current}-links.json`;
 
   function numbers(value) {
     return (String(value || '').match(/\d+/g) || []).map(Number);
+  }
+
+  function targetFromAnchor(anchor) {
+    try {
+      const url = new URL(anchor.href, window.location.href);
+      if (/\/page\.html$/i.test(url.pathname)) {
+        return (url.searchParams.get('src') || '').replace(/^\/+/, '');
+      }
+      return '';
+    } catch {
+      return '';
+    }
+  }
+
+  function collectLiveLinks() {
+    const links = [];
+    const seen = new Set();
+
+    document.querySelectorAll('.original-home-content a[href]').forEach((anchor) => {
+      const target = targetFromAnchor(anchor);
+      if (!target || !/\.html?$/i.test(target) || seen.has(target)) return;
+      seen.add(target);
+      links.push({
+        target,
+        href: anchor.getAttribute('href') || '',
+        text: (anchor.textContent || '').replace(/\s+/g, ' ').trim(),
+        exists: true,
+      });
+    });
+
+    return links;
   }
 
   function scoreLink(link, motor) {
@@ -20,14 +50,14 @@
     const nums = numbers(text);
     let score = 0;
 
-    if (Number.isFinite(motor.slots) && nums.includes(Number(motor.slots))) score += 100;
-    if (Number.isFinite(motor.rpm) && nums.includes(Number(motor.rpm))) score += 100;
-    if (Number.isFinite(motor.poles) && nums.includes(Number(motor.poles))) score += 15;
+    if (Number.isFinite(Number(motor.slots)) && nums.includes(Number(motor.slots))) score += 100;
+    if (Number.isFinite(Number(motor.rpm)) && nums.includes(Number(motor.rpm))) score += 100;
+    if (Number.isFinite(Number(motor.poles)) && nums.includes(Number(motor.poles))) score += 15;
 
     return score;
   }
 
-  function makePanel(mock, matches) {
+  function makePanel(mock, matches, linkCount) {
     const panel = document.createElement('section');
     panel.className = 'legacy-note';
     panel.dataset.esp32Test = '';
@@ -37,13 +67,13 @@
 
     const motor = mock.motor || {};
     const summary = document.createElement('p');
-    summary.textContent = `Тестовые данные: ${motor.slots ?? '—'} пазов, ${motor.rpm ?? '—'} об/мин, ${motor.phases ?? '—'} фазы.`;
+    summary.textContent = `Тестовые данные: ${motor.slots ?? '—'} пазов, ${motor.rpm ?? '—'} об/мин, ${motor.phases ?? '—'} фазы. Проверено ссылок: ${linkCount}.`;
 
     panel.append(heading, summary);
 
     if (!matches.length) {
       const empty = document.createElement('p');
-      empty.textContent = 'Подходящих страниц по тестовым параметрам не найдено.';
+      empty.textContent = 'Подходящих страниц по тестовым параметрам не найдено. Ничего автоматически не выбрано.';
       panel.appendChild(empty);
       return panel;
     }
@@ -56,8 +86,8 @@
     matches.slice(0, 10).forEach(({ link, score }) => {
       const item = document.createElement('li');
       const anchor = document.createElement('a');
-      anchor.href = `page.html?src=${encodeURIComponent(link.target || link.href)}`;
-      anchor.textContent = link.text || link.target || link.href;
+      anchor.href = `page.html?src=${encodeURIComponent(link.target)}&from=home`;
+      anchor.textContent = link.text || link.target;
       const meta = document.createElement('small');
       meta.textContent = ` — совпадение ${score}`;
       item.append(anchor, meta);
@@ -69,29 +99,32 @@
   }
 
   async function run() {
+    const host = document.querySelector('.legacy-content');
+    if (!host || host.querySelector('[data-esp32-test]')) return;
+
+    const liveLinks = collectLiveLinks();
+    if (!liveLinks.length) return;
+
     try {
-      const [mockResponse, linksResponse] = await Promise.all([fetch(MOCK_URL), fetch(LINKS_URL)]);
-      if (!mockResponse.ok || !linksResponse.ok) throw new Error('test data unavailable');
+      const mockResponse = await fetch(MOCK_URL);
+      if (!mockResponse.ok) throw new Error(`mock HTTP ${mockResponse.status}`);
 
       const mock = await mockResponse.json();
-      const links = await linksResponse.json();
       const motor = mock.motor || {};
-      const matches = (Array.isArray(links) ? links : [])
+      const matches = liveLinks
         .map((link) => ({ link, score: scoreLink(link, motor) }))
-        .filter((entry) => entry.score >= 200 && entry.link.exists !== false)
+        .filter((entry) => entry.score >= 200)
         .sort((a, b) => b.score - a.score || String(a.link.text || '').localeCompare(String(b.link.text || ''), 'ru'));
 
-      const host = document.querySelector('.legacy-content');
-      if (!host || host.querySelector('[data-esp32-test]')) return;
-      host.prepend(makePanel(mock, matches));
+      host.prepend(makePanel(mock, matches, liveLinks.length));
 
-      window.CoilMasterEsp32TestResult = { mock, matches };
+      window.CoilMasterEsp32TestResult = { mock, matches, linkCount: liveLinks.length };
       document.dispatchEvent(new CustomEvent('coilmaster:esp32-test-result', { detail: window.CoilMasterEsp32TestResult }));
     } catch (error) {
       console.warn('ESP32 scheme matching test failed:', error);
     }
   }
 
-  document.addEventListener('handbook:content-loaded', run, { once: true });
+  document.addEventListener('handbook:content-loaded', run);
   run();
 })();
