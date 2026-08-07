@@ -1,14 +1,30 @@
+@import url('./components.css');
+
 :root {
   --cm-bg: #f3f5f7;
+  --cm-bg-soft: #eef2f5;
   --cm-surface: #ffffff;
   --cm-border: #c8ced6;
   --cm-text: #1f2933;
   --cm-muted: #52606d;
+  --cm-primary: #315d7d;
   --cm-accent: #996600;
   --cm-link: #003399;
+  --cm-success: #2f7d4a;
+  --cm-warning: #a96800;
+  --cm-danger: #a83232;
+  --cm-focus: rgba(49, 93, 125, .35);
   --cm-sidebar: #26323f;
   --cm-sidebar-text: #f7f9fb;
   --cm-header-height: 76px;
+  --cm-radius-sm: 4px;
+  --cm-radius-md: 7px;
+  --cm-radius-lg: 10px;
+  --cm-shadow-sm: 0 2px 8px rgba(31, 41, 51, .08);
+  --cm-space-1: .35rem;
+  --cm-space-2: .65rem;
+  --cm-space-3: 1rem;
+  --cm-space-4: 1.4rem;
 }
 
 * { box-sizing: border-box; }
