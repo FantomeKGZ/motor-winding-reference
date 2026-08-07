@@ -187,11 +187,23 @@
     document.body.appendChild(script);
   }
 
+  function loadStyleOnce(href) {
+    if (document.querySelector(`link[href$="${href.split('/').pop()}"]`)) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    document.head.appendChild(link);
+  }
+
   addInterfaceControls();
   enableTableSearch();
+  loadStyleOnce('../shared/css/search-filters.css');
+  loadStyleOnce('../shared/css/recent-history.css');
+  loadStyleOnce('../shared/css/favorites.css');
   loadScriptOnce('../shared/js/home-content-loader.js');
   loadScriptOnce('../shared/js/fulltext-search.js');
   loadScriptOnce('../shared/js/recent-history.js');
+  loadScriptOnce('../shared/js/favorites.js');
 
   if (!button || !sidebar) return;
 
