@@ -10,7 +10,9 @@ on:
       - 'tools/build_page_inventory.py'
       - 'tools/build_search_index.py'
       - 'tools/build_scheme_catalog.py'
+      - 'tools/repair_scheme_catalog_images.py'
       - 'tools/validate_scheme_catalog.py'
+      - 'tools/validate_scheme_catalog_images.py'
       - '.github/workflows/validate-handbook-links.yml'
   workflow_dispatch:
 
@@ -71,6 +73,26 @@ jobs:
             --desktop-root 'sourse/desktop/Справочник от 09.12.2024 HTML' \
             --mobile-root 'sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML' \
             --output site/shared/data
+
+      - name: Repair marker images in scheme catalogs
+        run: |
+          python tools/repair_scheme_catalog_images.py \
+            site/shared/data/desktop-scheme-catalog.json \
+            'sourse/desktop/Справочник от 09.12.2024 HTML' \
+            --report site/shared/data/desktop-scheme-catalog-image-repair.json
+
+          python tools/repair_scheme_catalog_images.py \
+            site/shared/data/mobile-scheme-catalog.json \
+            'sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML' \
+            --report site/shared/data/mobile-scheme-catalog-image-repair.json
+
+      - name: Validate scheme catalog layout images
+        run: |
+          python tools/validate_scheme_catalog_images.py \
+            site/shared/data/desktop-scheme-catalog.json
+
+          python tools/validate_scheme_catalog_images.py \
+            site/shared/data/mobile-scheme-catalog.json
 
       - name: Validate CoilMaster scheme catalogs
         run: |
