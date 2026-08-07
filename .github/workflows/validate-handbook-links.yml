@@ -1,0 +1,40 @@
+name: Validate handbook links
+
+on:
+  pull_request:
+    paths:
+      - 'sourse/**'
+      - 'tools/build_scheme_index.py'
+      - '.github/workflows/validate-handbook-links.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-index:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Build and validate scheme index
+        run: |
+          python tools/build_scheme_index.py \
+            --desktop 'sourse/desktop/Справочник от 09.12.2024 HTML/index.html' \
+            --mobile 'sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML/index.html' \
+            --output site/shared/data
+
+      - name: Upload generated reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: handbook-link-reports
+          path: site/shared/data/*.json
+          if-no-files-found: warn
