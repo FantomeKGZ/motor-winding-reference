@@ -82,28 +82,30 @@
   }
 
   function enableTableSearch() {
-    if (!searchInput) return;
+    if (!searchInput || searchInput.dataset.searchReady === '1') return;
+    searchInput.dataset.searchReady = '1';
 
-    const rows = Array.from(document.querySelectorAll('.legacy-table tbody tr'));
-    if (!rows.length) return;
-
-    const status = document.createElement('div');
-    status.className = 'cm-search-status';
-    status.setAttribute('role', 'status');
-    status.setAttribute('aria-live', 'polite');
-    searchInput.insertAdjacentElement('afterend', status);
-
-    const indexedRows = rows.map((row) => ({ row, text: rowSearchText(row) }));
+    let status = document.querySelector('.cm-search-status');
+    if (!status) {
+      status = document.createElement('div');
+      status.className = 'cm-search-status';
+      status.setAttribute('role', 'status');
+      status.setAttribute('aria-live', 'polite');
+      searchInput.insertAdjacentElement('afterend', status);
+    }
 
     const applyFilter = () => {
+      const rows = Array.from(document.querySelectorAll('.legacy-table tr'))
+        .filter((row) => row.querySelector('td, th'));
       const query = normalizeSearchText(searchInput.value);
       const tokens = query ? query.split(/\s+/).filter(Boolean) : [];
       let visibleCount = 0;
 
-      indexedRows.forEach(({ row, text }) => {
-        const visible = tokens.every((token) => text.includes(token));
+      rows.forEach((row) => {
+        const isHeader = !row.querySelector('a[href]') && row.parentElement?.tagName === 'THEAD';
+        const visible = !tokens.length || isHeader || tokens.every((token) => rowSearchText(row).includes(token));
         row.hidden = !visible;
-        if (visible) visibleCount += 1;
+        if (visible && !isHeader) visibleCount += 1;
       });
 
       if (!tokens.length) {
@@ -111,7 +113,7 @@
       } else if (visibleCount) {
         status.textContent = `Найдено строк: ${visibleCount}`;
       } else {
-        status.textContent = 'Совпадений в текущей таблице нет';
+        status.textContent = 'Совпадений в таблицах нет';
       }
     };
 
@@ -123,10 +125,20 @@
         searchInput.blur();
       }
     });
+
+    document.addEventListener('handbook:content-loaded', applyFilter);
+  }
+
+  function loadOriginalHomeContent() {
+    const script = document.createElement('script');
+    script.src = '../shared/js/home-content-loader.js';
+    script.defer = true;
+    document.body.appendChild(script);
   }
 
   addInterfaceControls();
   enableTableSearch();
+  loadOriginalHomeContent();
 
   if (!button || !sidebar) return;
 
