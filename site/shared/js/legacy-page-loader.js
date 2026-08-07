@@ -8,6 +8,7 @@
   const params = new URLSearchParams(window.location.search);
   const requested = (params.get('src') || '').replace(/^\/+/, '');
   const safePath = requested && !requested.includes('..') && /\.html?$/i.test(requested) ? requested : '';
+  const cameFromHome = params.get('from') === 'home';
 
   const sourceRoot = current === 'desktop'
     ? '../../sourse/desktop/Справочник от 09.12.2024 HTML/'
@@ -39,9 +40,12 @@
 
       if (/\.html?$/i.test(relative)) {
         if (/^index\.html?$/i.test(relative)) {
-          link.href = 'index.html';
+          link.href = cameFromHome ? 'index.html?restore=1' : 'index.html';
         } else {
-          link.href = `page.html?src=${encodeURIComponent(relative)}`;
+          const next = new URL('page.html', window.location.href);
+          next.searchParams.set('src', relative);
+          if (cameFromHome) next.searchParams.set('from', 'home');
+          link.href = `${next.pathname.split('/').pop()}${next.search}`;
         }
         return;
       }
@@ -67,12 +71,12 @@
     back.textContent = '← Назад';
     back.addEventListener('click', () => {
       if (window.history.length > 1) window.history.back();
-      else window.location.href = 'index.html';
+      else window.location.href = cameFromHome ? 'index.html?restore=1' : 'index.html';
     });
 
     const home = document.createElement('a');
     home.className = 'legacy-page-control';
-    home.href = 'index.html';
+    home.href = cameFromHome ? 'index.html?restore=1' : 'index.html';
     home.textContent = 'К таблице схем';
 
     const original = document.createElement('a');
@@ -116,7 +120,6 @@
     wrapper.className = 'original-page-content';
     wrapper.innerHTML = sourceContent.innerHTML;
 
-    // The old graphical header is deliberately not imported. The technical page content is preserved.
     wrapper.querySelectorAll('.verh').forEach((node) => node.remove());
     rewriteLinks(wrapper);
 
