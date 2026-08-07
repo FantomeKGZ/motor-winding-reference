@@ -81,10 +81,26 @@
     return normalizeSearchText(`${row.textContent || ''} ${hrefs}`);
   }
 
+  function linkSearchText(link) {
+    let href = '';
+    try {
+      href = decodeURIComponent(link.getAttribute('href') || '');
+    } catch {
+      href = link.getAttribute('href') || '';
+    }
+    return normalizeSearchText(`${link.textContent || ''} ${href} ${link.title || ''}`);
+  }
+
+  function clearSearchHighlights() {
+    document.querySelectorAll('.cm-search-hit').forEach((node) => node.classList.remove('cm-search-hit'));
+    document.querySelectorAll('.cm-search-row-hit').forEach((node) => node.classList.remove('cm-search-row-hit'));
+  }
+
   function enableTableSearch() {
     if (!searchInput || searchInput.dataset.searchReady === '1') return;
     searchInput.dataset.searchReady = '1';
 
+    let lastScrolledQuery = '';
     let status = document.querySelector('.cm-search-status');
     if (!status) {
       status = document.createElement('div');
@@ -99,21 +115,49 @@
         .filter((row) => row.querySelector('td, th'));
       const query = normalizeSearchText(searchInput.value);
       const tokens = query ? query.split(/\s+/).filter(Boolean) : [];
+      const numericTokens = tokens.filter((token) => /^\d+$/.test(token));
       let visibleCount = 0;
+      const exactHits = [];
+
+      clearSearchHighlights();
 
       rows.forEach((row) => {
         const isHeader = !row.querySelector('a[href]') && row.parentElement?.tagName === 'THEAD';
-        const visible = !tokens.length || isHeader || tokens.every((token) => rowSearchText(row).includes(token));
+        const rowText = rowSearchText(row);
+        const visible = !tokens.length || isHeader || tokens.every((token) => rowText.includes(token));
         row.hidden = !visible;
-        if (visible && !isHeader) visibleCount += 1;
+
+        if (visible && !isHeader) {
+          visibleCount += 1;
+          if (tokens.length) row.classList.add('cm-search-row-hit');
+        }
+
+        if (!visible || numericTokens.length < 2) return;
+
+        row.querySelectorAll('a[href]').forEach((link) => {
+          const text = linkSearchText(link);
+          if (numericTokens.every((token) => text.includes(token))) {
+            const cell = link.closest('td, th') || link;
+            cell.classList.add('cm-search-hit');
+            exactHits.push(cell);
+          }
+        });
       });
 
       if (!tokens.length) {
         status.textContent = '';
+        lastScrolledQuery = '';
+      } else if (exactHits.length) {
+        status.textContent = `Найдено точных схем: ${exactHits.length}. Строк: ${visibleCount}`;
       } else if (visibleCount) {
         status.textContent = `Найдено строк: ${visibleCount}`;
       } else {
         status.textContent = 'Совпадений в таблицах нет';
+      }
+
+      if (exactHits.length && query !== lastScrolledQuery) {
+        lastScrolledQuery = query;
+        exactHits[0].scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
       }
     };
 
@@ -123,6 +167,12 @@
         searchInput.value = '';
         applyFilter();
         searchInput.blur();
+      } else if (event.key === 'Enter') {
+        const firstHit = document.querySelector('.cm-search-hit a[href], .cm-search-hit');
+        if (firstHit) {
+          event.preventDefault();
+          firstHit.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+        }
       }
     });
 
@@ -130,6 +180,7 @@
   }
 
   function loadOriginalHomeContent() {
+    if (document.querySelector('script[src$="home-content-loader.js"]')) return;
     const script = document.createElement('script');
     script.src = '../shared/js/home-content-loader.js';
     script.defer = true;
