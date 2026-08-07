@@ -10,17 +10,19 @@
     "poles": 2,
     "q": 4,
     "connection": null,
-    "winding_type": null,
-    "parallel_branches": null
+    "winding_type": "двухслойная",
+    "parallel_branches": 2
   },
   "test_cases": [
     {
-      "id": "24-3000-q4",
+      "id": "24-3000-q4-deep",
       "slots": 24,
       "rpm": 3000,
       "phases": 3,
       "poles": 2,
       "q": 4,
+      "winding_type": "двухслойная",
+      "parallel_branches": 2,
       "expected": { "min_matches": 1 }
     },
     {
@@ -48,6 +50,26 @@
       "phases": 3,
       "poles": 2,
       "q": 9,
+      "expected": { "max_matches": 0 }
+    },
+    {
+      "id": "negative-wrong-branches",
+      "slots": 24,
+      "rpm": 3000,
+      "phases": 3,
+      "poles": 2,
+      "q": 4,
+      "parallel_branches": 9,
+      "expected": { "max_matches": 0 }
+    },
+    {
+      "id": "negative-winding-type",
+      "slots": 24,
+      "rpm": 3000,
+      "phases": 3,
+      "poles": 2,
+      "q": 4,
+      "winding_type": "тороидальная",
       "expected": { "max_matches": 0 }
     },
     {
