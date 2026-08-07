@@ -216,8 +216,10 @@
   loadScriptOnce('../shared/js/page-parameters.js');
   loadScriptOnce('../shared/js/special-scheme-classifier.js');
 
-  const schemeUiReady = loadScriptOnce('../shared/js/scheme-picker.js')
-    .then(() => loadScriptOnce('../shared/js/motor-scheme-widget.js'));
+  const schemeUiReady = Promise.all([
+    loadScriptOnce('../shared/js/scheme-catalog-client.js'),
+    loadScriptOnce('../shared/js/scheme-picker.js').then(() => loadScriptOnce('../shared/js/motor-scheme-widget.js')),
+  ]);
 
   const esp32Ready = loadScriptOnce('../shared/js/esp32-client.js')
     .then(() => Promise.all([
