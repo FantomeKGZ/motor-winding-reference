@@ -63,20 +63,21 @@
   function scoreItem(item, tokens, normalizedQuery) {
     const title = normalize(item.title);
     const path = normalize(item.path);
-    // build_search_index.py stores the searchable body in `search`.
-    // Keep fallbacks for older/generated index formats.
+    const type = normalize(item.type_label || item.type);
     const text = normalize(item.search || item.text || item.content || item.excerpt || item.snippet);
-    const haystack = `${title} ${path} ${text}`;
+    const haystack = `${title} ${path} ${type} ${text}`;
     if (!tokens.every((token) => haystack.includes(token))) return -1;
 
     let score = 0;
     if (title === normalizedQuery) score += 120;
     if (title.includes(normalizedQuery)) score += 70;
+    if (type.includes(normalizedQuery)) score += 45;
     if (path.includes(normalizedQuery)) score += 35;
     if (text.includes(normalizedQuery)) score += 20;
 
     tokens.forEach((token) => {
       if (title.includes(token)) score += 18;
+      if (type.includes(token)) score += 12;
       if (path.includes(token)) score += 8;
       if (text.includes(token)) score += 2;
     });
@@ -84,7 +85,6 @@
   }
 
   function makeSnippet(item, tokens) {
-    // `excerpt` is the human-readable source produced by build_search_index.py.
     const source = String(item.excerpt || item.snippet || item.text || item.content || '')
       .replace(/\s+/g, ' ')
       .trim();
@@ -145,16 +145,26 @@
       card.className = 'cm-fulltext-item';
       card.href = pageUrl(item.path);
 
+      const headingRow = document.createElement('span');
+      headingRow.className = 'cm-fulltext-heading-row';
+
       const heading = document.createElement('strong');
       heading.textContent = item.title || item.path;
 
+      const badge = document.createElement('span');
+      badge.className = 'cm-fulltext-type';
+      badge.dataset.type = item.type || 'page';
+      badge.textContent = item.type_label || 'Страница справочника';
+
       const snippet = document.createElement('span');
+      snippet.className = 'cm-fulltext-snippet';
       snippet.textContent = makeSnippet(item, tokens);
 
       const path = document.createElement('small');
       path.textContent = item.path;
 
-      card.append(heading, snippet, path);
+      headingRow.append(heading, badge);
+      card.append(headingRow, snippet, path);
       list.appendChild(card);
     });
 
@@ -165,8 +175,6 @@
   async function runSearch() {
     const query = normalize(input.value);
 
-    // Queries such as "24 3000" are handled by the original table search.
-    // Do not cover the familiar table with a second result panel.
     if (query.length < MIN_QUERY_LENGTH || isTableParameterQuery(query)) {
       hideResults();
       return;
