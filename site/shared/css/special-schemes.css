@@ -1,0 +1,14 @@
+.cm-special-scheme-tags,
+.cm-special-scheme-summary {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.cm-special-scheme-tags {
+  font-weight: 600;
+}
+
+.cm-scheme-variant[data-special-mismatch="1"] {
+  display: none;
+}
