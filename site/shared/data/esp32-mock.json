@@ -22,7 +22,6 @@
       "phases": 3,
       "poles": 2,
       "q": 4,
-      "connection": "Y",
       "winding_type": "двухслойная",
       "parallel_branches": 2,
       "winding_pitch": "10",
@@ -73,19 +72,6 @@
       "poles": 2,
       "q": 4,
       "winding_type": "тороидальная",
-      "expected": { "max_matches": 0 }
-    },
-    {
-      "id": "negative-connection",
-      "slots": 24,
-      "rpm": 3000,
-      "phases": 3,
-      "poles": 2,
-      "q": 4,
-      "connection": "series-only",
-      "winding_type": "двухслойная",
-      "parallel_branches": 2,
-      "winding_pitch": "10",
       "expected": { "max_matches": 0 }
     },
     {
