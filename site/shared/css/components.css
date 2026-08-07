@@ -1,0 +1,125 @@
+/* CoilMaster UI 2.0 — reusable interface components. */
+
+.cm-card {
+  background: var(--cm-surface);
+  border: 1px solid var(--cm-border);
+  border-radius: var(--cm-radius-lg);
+  box-shadow: var(--cm-shadow-sm);
+  padding: var(--cm-space-4);
+}
+
+.cm-card__title {
+  margin: 0 0 var(--cm-space-3);
+  color: var(--cm-text);
+  font-size: 1.1rem;
+}
+
+.cm-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--cm-space-3);
+}
+
+.cm-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .45rem;
+  min-height: 42px;
+  padding: .65rem .9rem;
+  border: 1px solid transparent;
+  border-radius: var(--cm-radius-md);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cm-button--primary {
+  color: #fff;
+  background: var(--cm-primary);
+  border-color: var(--cm-primary);
+}
+
+.cm-button--secondary {
+  color: var(--cm-text);
+  background: var(--cm-surface);
+  border-color: var(--cm-border);
+}
+
+.cm-button--accent {
+  color: #fff;
+  background: var(--cm-accent);
+  border-color: var(--cm-accent);
+}
+
+.cm-button:focus-visible,
+.cm-input:focus-visible,
+.cm-select:focus-visible {
+  outline: 3px solid var(--cm-focus);
+  outline-offset: 2px;
+}
+
+.cm-field {
+  display: grid;
+  gap: var(--cm-space-1);
+}
+
+.cm-field__label {
+  font-weight: 700;
+}
+
+.cm-input,
+.cm-select {
+  width: 100%;
+  min-height: 42px;
+  padding: .65rem .75rem;
+  border: 1px solid var(--cm-border);
+  border-radius: var(--cm-radius-md);
+  background: var(--cm-surface);
+  color: var(--cm-text);
+  font: inherit;
+}
+
+.cm-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: .2rem .55rem;
+  border-radius: 999px;
+  background: var(--cm-bg-soft);
+  border: 1px solid var(--cm-border);
+  font-size: .85rem;
+  font-weight: 700;
+}
+
+.cm-status {
+  padding: var(--cm-space-3);
+  border-left: 4px solid var(--cm-primary);
+  border-radius: var(--cm-radius-sm);
+  background: var(--cm-bg-soft);
+}
+
+.cm-status--success { border-left-color: var(--cm-success); }
+.cm-status--warning { border-left-color: var(--cm-warning); }
+.cm-status--danger { border-left-color: var(--cm-danger); }
+
+.cm-data-list {
+  display: grid;
+  grid-template-columns: minmax(130px, .7fr) minmax(0, 1.3fr);
+  gap: var(--cm-space-2) var(--cm-space-3);
+  margin: 0;
+}
+
+.cm-data-list dt {
+  color: var(--cm-muted);
+  font-weight: 700;
+}
+
+.cm-data-list dd {
+  margin: 0;
+}
+
+@media (max-width: 620px) {
+  .cm-data-list { grid-template-columns: 1fr; }
+  .cm-data-list dd { margin-bottom: var(--cm-space-2); }
+}
