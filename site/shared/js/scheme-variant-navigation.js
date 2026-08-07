@@ -9,6 +9,7 @@
     ? '../../sourse/desktop/Справочник от 09.12.2024 HTML/'
     : '../../sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML/';
   const cache = new Map();
+  const connectionCache = new Map();
 
   if (!document.querySelector('link[href$="scheme-variant-navigation.css"]')) {
     const style = document.createElement('link');
@@ -57,6 +58,22 @@
     if (source.includes('расшир') && source.includes('фаз')) return 'расширенная фазная зона';
     if (source.includes('сплош') && source.includes('фаз')) return 'сплошная фазная зона';
     return source;
+  }
+
+  function normalizeConnection(value) {
+    const source = normalize(value).replace(/\s/g, '');
+    if (!source) return null;
+    if (source === 'y' || source.includes('звезд') || source.includes('star')) return 'star';
+    if (source === 'd' || source === 'delta' || source === 'triangle' || source.includes('треуг') || source.includes('дельт') || source.includes('δ') || source.includes('∆') || source.includes('Δ')) return 'delta';
+    if (source.includes('звезда/треуг') || source.includes('звезда-треуг')) return 'star-delta';
+    return source;
+  }
+
+  function connectionLabel(value) {
+    if (value === 'star') return 'звезда';
+    if (value === 'delta') return 'треугольник';
+    if (value === 'star-delta') return 'звезда/треугольник';
+    return value;
   }
 
   function extractPitch(text) {
@@ -143,22 +160,100 @@
     return variants;
   }
 
+  async function fetchLegacyDocument(target) {
+    const url = new URL(`${sourceRoot}${target}`, window.location.href);
+    const response = await fetch(url, { cache: 'force-cache' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const bytes = await response.arrayBuffer();
+    const html = new TextDecoder('windows-1251').decode(bytes);
+    return new DOMParser().parseFromString(html, 'text/html');
+  }
+
   async function inspectPage(target) {
     if (cache.has(target)) return cache.get(target);
-    const promise = (async () => {
-      const url = new URL(`${sourceRoot}${target}`, window.location.href);
-      const response = await fetch(url, { cache: 'force-cache' });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const bytes = await response.arrayBuffer();
-      const html = new TextDecoder('windows-1251').decode(bytes);
-      const doc = new DOMParser().parseFromString(html, 'text/html');
-      return extractVariants(doc, target);
-    })().catch((error) => {
-      console.warn('Unable to inspect winding variants:', target, error);
-      return [];
-    });
+    const promise = fetchLegacyDocument(target)
+      .then((doc) => extractVariants(doc, target))
+      .catch((error) => {
+        console.warn('Unable to inspect winding variants:', target, error);
+        return [];
+      });
     cache.set(target, promise);
     return promise;
+  }
+
+  function inferConnectionKinds(text) {
+    const source = normalize(text);
+    const kinds = new Set();
+    if (/в\s+звезд|соединени[^.]{0,30}звезд/.test(source)) kinds.add('star');
+    if (/в\s+треугольник|соединени[^.]{0,30}треугольник/.test(source)) kinds.add('delta');
+    return Array.from(kinds);
+  }
+
+  function extractConnectionImages(doc, target) {
+    const items = [];
+    const seen = new Set();
+    doc.querySelectorAll('img[src]').forEach((image) => {
+      const paragraph = image.closest('p');
+      const previous = paragraph?.previousElementSibling;
+      const context = [
+        previous?.textContent || '',
+        paragraph?.textContent || '',
+        image.getAttribute('alt') || '',
+        image.getAttribute('title') || '',
+      ].join(' ');
+      const kinds = inferConnectionKinds(context);
+      if (!kinds.length) return;
+      const src = normalizePath(image.getAttribute('src'));
+      if (!src) return;
+      for (const kind of kinds) {
+        const key = `${kind}|${src}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        items.push({
+          kind,
+          target,
+          image: src,
+          description: (previous?.textContent || image.getAttribute('alt') || '').replace(/\s+/g, ' ').trim(),
+        });
+      }
+    });
+    return items;
+  }
+
+  async function inspectConnectionPage(target) {
+    if (connectionCache.has(target)) return connectionCache.get(target);
+    const promise = fetchLegacyDocument(target)
+      .then((doc) => {
+        const bodyText = doc.body?.textContent || '';
+        const title = (doc.title || '').trim();
+        const supported = inferConnectionKinds(`${title} ${bodyText}`);
+        const images = extractConnectionImages(doc, target);
+        images.forEach((item) => {
+          if (!supported.includes(item.kind)) supported.push(item.kind);
+        });
+        return { target, title, supported, images };
+      })
+      .catch((error) => {
+        console.warn('Unable to inspect connection page:', target, error);
+        return { target, supported: [], images: [], error: error.message };
+      });
+    connectionCache.set(target, promise);
+    return promise;
+  }
+
+  async function enrichVariantConnections(variant) {
+    if (!variant.connections.length) return { ...variant, connectionMeta: [] };
+    const connectionMeta = await Promise.all(variant.connections.map(inspectConnectionPage));
+    return { ...variant, connectionMeta };
+  }
+
+  function variantSupportsConnection(variant, wanted) {
+    if (!wanted || !variant.connectionMeta?.length) return true;
+    if (wanted === 'star-delta') {
+      const allKinds = new Set(variant.connectionMeta.flatMap((meta) => meta.supported || []));
+      return allKinds.has('star') && allKinds.has('delta');
+    }
+    return variant.connectionMeta.some((meta) => (meta.supported || []).includes(wanted));
   }
 
   function matchesMotor(variant, motor) {
@@ -171,18 +266,39 @@
     const wantedPitch = normalize(motor?.winding_pitch ?? motor?.coil_pitch ?? motor?.pitch ?? motor?.y);
     if (wantedPitch && variant.pitch && normalize(variant.pitch) !== wantedPitch.replace(/^y\s*=\s*/i, '').replace(/^у\s*=\s*/i, '')) return false;
 
+    const wantedConnection = normalizeConnection(motor?.connection);
+    if (wantedConnection && !variantSupportsConnection(variant, wantedConnection)) return false;
+
     return true;
   }
 
-  function variantUrl(variant) {
+  function pageUrl(target, image) {
     const url = new URL('page.html', window.location.href);
-    url.searchParams.set('src', variant.target);
+    url.searchParams.set('src', target);
     url.searchParams.set('from', 'home');
-    url.searchParams.set('img', variant.image);
+    if (image) url.searchParams.set('img', image);
     return `${url.pathname.split('/').pop()}${url.search}`;
   }
 
-  function variantCard(variant) {
+  function variantUrl(variant) {
+    return pageUrl(variant.target, variant.image);
+  }
+
+  function bestConnectionLink(variant, wantedConnection) {
+    if (!variant.connectionMeta?.length) return null;
+    const wanted = normalizeConnection(wantedConnection);
+    const candidates = variant.connectionMeta.flatMap((meta) => {
+      const matchingImages = wanted
+        ? meta.images.filter((image) => image.kind === wanted)
+        : meta.images;
+      if (matchingImages.length) return matchingImages.map((image) => ({ ...image, page: meta.target }));
+      if (!wanted || meta.supported.includes(wanted)) return [{ kind: wanted, page: meta.target, image: null, description: meta.title }];
+      return [];
+    });
+    return candidates[0] || null;
+  }
+
+  function variantCard(variant, motor) {
     const item = document.createElement('li');
     item.className = 'cm-scheme-variant';
 
@@ -208,6 +324,16 @@
       item.append(section);
     }
     if (meta.textContent) item.append(meta);
+
+    const connection = bestConnectionLink(variant, motor?.connection);
+    if (connection) {
+      const connectionLink = document.createElement('a');
+      connectionLink.className = 'cm-scheme-variant-connection';
+      connectionLink.href = pageUrl(connection.page, connection.image);
+      connectionLink.textContent = `Открыть схему соединения${connection.kind ? `: ${connectionLabel(connection.kind)}` : ''}`;
+      item.append(connectionLink);
+    }
+
     if (variant.hints.length) {
       const hint = document.createElement('small');
       hint.className = 'cm-scheme-variant-hint';
@@ -227,7 +353,8 @@
       entry,
       variants: await inspectPage(entry.link.target),
     })));
-    const all = pages.flatMap((page) => page.variants);
+    const raw = pages.flatMap((page) => page.variants);
+    const all = await Promise.all(raw.map(enrichVariantConnections));
     const filtered = all.filter((variant) => matchesMotor(variant, motor));
 
     const section = document.createElement('section');
@@ -242,18 +369,25 @@
       : `Найдено вариантов: ${all.length}; после параметров двигателя осталось: ${filtered.length}.`;
     section.append(heading, summary);
 
+    if (motor.connection) {
+      const connectionInfo = document.createElement('p');
+      const normalized = normalizeConnection(motor.connection);
+      connectionInfo.textContent = `Дополнительно проверено соединение: ${connectionLabel(normalized || motor.connection)}.`;
+      section.appendChild(connectionInfo);
+    }
+
     if (!all.length) {
       const empty = document.createElement('p');
       empty.textContent = 'Отдельные рисунки на найденных страницах автоматически не распознаны. Откройте страницу целиком.';
       section.appendChild(empty);
     } else if (!filtered.length) {
       const empty = document.createElement('p');
-      empty.textContent = 'На уровне отдельных рисунков точного совпадения не найдено. Страница-группа остаётся доступной для ручной проверки.';
+      empty.textContent = 'На уровне отдельных рисунков и схем соединений точного совпадения не найдено. Страница-группа остаётся доступной для ручной проверки.';
       section.appendChild(empty);
     } else {
       const list = document.createElement('ol');
       list.className = 'cm-scheme-variant-list';
-      filtered.slice(0, 20).forEach((variant) => list.appendChild(variantCard(variant)));
+      filtered.slice(0, 20).forEach((variant) => list.appendChild(variantCard(variant, motor)));
       section.appendChild(list);
       if (filtered.length > 20) {
         const more = document.createElement('small');
