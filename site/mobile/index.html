@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Справочник обмотчика — мобильная версия</title>
+  <link rel="stylesheet" href="../shared/css/base.css">
+</head>
+<body>
+<div class="cm-app">
+  <aside class="cm-sidebar" data-sidebar>
+    <div class="cm-brand">CoilMaster Handbook</div>
+
+    <div class="cm-nav-title">Справочник</div>
+    <nav class="cm-nav">
+      <a href="index.html" aria-current="page">Главная</a>
+      <a href="#search">Поиск</a>
+      <a href="#schemes">Схемы обмоток</a>
+      <a href="#motors">База двигателей</a>
+      <a href="#tables">Таблицы</a>
+      <a href="#repair">Технология ремонта</a>
+    </nav>
+
+    <div class="cm-nav-title">Расчёты и склад</div>
+    <nav class="cm-nav">
+      <a href="#recalculation">Перерасчёт Al → Cu</a>
+      <a href="#warehouse">Склад проводов</a>
+    </nav>
+
+    <div class="cm-nav-title">CoilMaster OS</div>
+    <nav class="cm-nav">
+      <a href="/web/mobile/">Панель управления</a>
+      <a href="/web/mobile/#winding">Текущая намотка</a>
+      <a href="/web/mobile/#history">История работ</a>
+      <a href="/web/mobile/#status">Состояние ESP32</a>
+      <a href="/web/mobile/#settings">Настройки</a>
+    </nav>
+  </aside>
+
+  <main class="cm-main">
+    <header class="cm-toolbar">
+      <button class="cm-menu-button" type="button" data-menu-toggle aria-expanded="false">☰ Меню</button>
+      <input class="cm-search" id="search" type="search" placeholder="Поиск по справочнику">
+    </header>
+
+    <div class="cm-content">
+      <section class="legacy-header">
+        <img src="../../sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML/images/verh.jpg" alt="Справочник обмотчика">
+      </section>
+
+      <section class="legacy-content">
+        <h1>Справочник обмотчика асинхронных электродвигателей</h1>
+        <p><strong>Тестовая мобильная оболочка.</strong> Сохранён привычный порядок выбора схем, а меню CoilMaster скрывается за кнопкой.</p>
+
+        <h2 id="schemes">Односкоростные двигатели</h2>
+        <div class="table-scroll">
+          <table class="legacy-table">
+            <thead>
+              <tr><th rowspan="2">Пазы</th><th colspan="6">Обороты</th></tr>
+              <tr><th>3000</th><th>1500</th><th>1000</th><th>750</th><th>600</th><th>500</th></tr>
+            </thead>
+            <tbody>
+              <tr><th>9</th><td><a href="../../sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML/y93000.html">✓</a></td><td><a href="../../sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML/y91500.html">✓</a></td><td><a href="../../sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML/y91000.html">✓</a></td><td><a href="../../sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML/y9750.html">✓</a></td><td><a href="../../sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML/y9600.html">✓</a></td><td></td></tr>
+              <tr><th>12</th><td><a href="../../sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML/y123000.html">✓</a></td><td><a href="../../sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML/y121500.html">✓</a></td><td><a href="../../sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML/y121000.html">✓</a></td><td><a href="../../sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML/y12750.html">✓</a></td><td><a href="../../sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML/y12600.html">✓</a></td><td></td></tr>
+              <tr><th>18</th><td><a href="../../sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML/y183000.html">✓</a></td><td><a href="../../sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML/y181500.html">✓</a></td><td><a href="../../sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML/y181000.html">✓</a></td><td><a href="../../sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML/y18750.html">✓</a></td><td></td><td><a href="../../sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML/y18500.html">✓</a></td></tr>
+              <tr><th>24</th><td><a href="../../sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML/y243000.html">✓</a></td><td><a href="../../sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML/y241500.html">✓</a></td><td><a href="../../sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML/y241000.html">✓</a></td><td><a href="../../sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML/y24750.html">✓</a></td><td><a href="../../sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML/y24600.html">✓</a></td><td><a href="../../sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML/y24500.html">✓</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+<script src="../shared/js/navigation.js"></script>
+</body>
+</html>
