@@ -75,6 +75,28 @@ def make_excerpt(text: str, limit: int = 360) -> str:
     return cut + "…"
 
 
+def classify_page(relative: str, title: str, text: str) -> tuple[str, str]:
+    """Return a conservative page type without changing legacy content.
+
+    Classification is intentionally broad: it is a navigation hint, not a
+    technical assertion about the winding itself.
+    """
+    path = relative.lower()
+    haystack = f"{title} {text[:2200]}".lower()
+
+    if "схем" in haystack and ("уклад" in haystack or re.match(r"^y\d", Path(path).name)):
+        return "winding-layout", "Схема укладки"
+    if "схем" in haystack and ("соедин" in haystack or Path(path).name.startswith("ss")):
+        return "connection", "Схема соединения"
+    if any(term in haystack for term in ("обмоточные данные", "данные электродвигател", "тип электродвигател")):
+        return "motor-data", "Данные двигателя"
+    if "таблиц" in haystack:
+        return "table", "Таблица"
+    if any(term in haystack for term in ("ремонт", "изоляц", "провод", "подшипник", "технолог")):
+        return "reference", "Справочный материал"
+    return "page", "Страница справочника"
+
+
 def build_index(root: Path) -> dict:
     pages = []
     total_chars = 0
@@ -97,18 +119,21 @@ def build_index(root: Path) -> dict:
             title = path.stem
 
         relative = path.relative_to(root).as_posix()
+        page_type, type_label = classify_page(relative, title, text)
         total_chars += len(text)
         pages.append(
             {
                 "path": relative,
                 "title": title,
+                "type": page_type,
+                "type_label": type_label,
                 "excerpt": make_excerpt(text),
-                "search": f"{title} {text}".lower(),
+                "search": f"{title} {type_label} {text}".lower(),
             }
         )
 
     return {
-        "version": 1,
+        "version": 2,
         "root": root.name,
         "page_count": len(pages),
         "total_text_chars": total_chars,
