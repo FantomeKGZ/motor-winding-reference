@@ -54,6 +54,7 @@ a:hover { color: #cc9900; }
   z-index: 10;
 }
 .cm-search { width: min(620px, 100%); padding: 11px 13px; border: 1px solid var(--cm-border); border-radius: 7px; font-size: 1rem; }
+.cm-search-status { color: var(--cm-muted); font-size: 13px; white-space: nowrap; }
 .cm-content { max-width: 1500px; margin: 0 auto; padding: 10px 14px 20px; }
 
 /* Рабочая область сохраняет привычную плотность и структуру старого справочника. */
@@ -188,6 +189,16 @@ a:hover { color: #cc9900; }
   font-size: inherit;
 }
 
+/* Поиск не меняет геометрию старой таблицы: только мягко выделяет найденные места. */
+.legacy-table tr.cm-search-row-hit > td,
+.legacy-table tr.cm-search-row-hit > th { background-color: rgba(255, 248, 196, .35); }
+.legacy-table .cm-search-hit {
+  background: #fff0a8 !important;
+  box-shadow: inset 0 0 0 2px #b88700;
+  font-weight: 700;
+}
+.legacy-table .cm-search-hit a { color: #7a4e00; }
+
 .cm-menu-button { display: none; }
 
 @media (max-width: 800px) {
@@ -195,7 +206,9 @@ a:hover { color: #cc9900; }
   .cm-sidebar { position: fixed; inset: 0 auto 0 0; width: min(86vw, 320px); z-index: 30; transform: translateX(-105%); transition: transform .2s ease; overflow-y: auto; }
   .cm-sidebar.is-open { transform: translateX(0); }
   .cm-menu-button { display: inline-flex; min-height: 42px; align-items: center; }
-  .cm-toolbar { padding: 10px; }
+  .cm-toolbar { padding: 10px; flex-wrap: wrap; }
+  .cm-search { flex: 1 1 220px; }
+  .cm-search-status { width: 100%; white-space: normal; }
   .cm-content { padding: 6px; }
   .legacy-content { padding: 4px; font-size: 13px; }
   .legacy-table { font-size: 11px; }
