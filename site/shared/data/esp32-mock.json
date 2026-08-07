@@ -11,7 +11,8 @@
     "q": 4,
     "connection": null,
     "winding_type": "двухслойная",
-    "parallel_branches": 2
+    "parallel_branches": 2,
+    "winding_pitch": "10"
   },
   "test_cases": [
     {
