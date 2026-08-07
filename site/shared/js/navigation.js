@@ -191,6 +191,7 @@
   enableTableSearch();
   loadScriptOnce('../shared/js/home-content-loader.js');
   loadScriptOnce('../shared/js/fulltext-search.js');
+  loadScriptOnce('../shared/js/recent-history.js');
 
   if (!button || !sidebar) return;
 
