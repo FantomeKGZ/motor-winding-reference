@@ -1,0 +1,30 @@
+.cm-favorite-toggle {
+  white-space: nowrap;
+}
+.cm-favorite-toggle.is-favorite {
+  background: #fff3bf;
+  border-color: #c69a00;
+  color: #7d5d00;
+  font-weight: 700;
+}
+.cm-favorites-nav a {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+.cm-favorite-star-small {
+  color: #d29a00;
+  flex: 0 0 auto;
+  line-height: 1.25;
+}
+.cm-favorite-title {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+@media (max-width: 800px) {
+  .cm-favorite-toggle {
+    flex: 1 1 auto;
+  }
+}
