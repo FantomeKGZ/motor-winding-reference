@@ -5,6 +5,7 @@
   const host = document.querySelector('.legacy-content');
   if (!current || !host) return;
 
+  const SCROLL_KEY = `coilmaster-handbook-home-scroll-${current}`;
   const sourceRoot = current === 'desktop'
     ? '../../sourse/desktop/Справочник от 09.12.2024 HTML/'
     : '../../sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML/';
@@ -18,6 +19,35 @@
   function sourceRelativePath(url) {
     if (url.origin !== rootUrl.origin || !url.pathname.startsWith(rootUrl.pathname)) return null;
     return decodeURIComponent(url.pathname.slice(rootUrl.pathname.length));
+  }
+
+  function rememberHomePosition() {
+    try {
+      sessionStorage.setItem(SCROLL_KEY, JSON.stringify({ y: window.scrollY, at: Date.now() }));
+    } catch {
+      // The handbook still works when sessionStorage is unavailable.
+    }
+  }
+
+  function restoreHomePositionIfRequested() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('restore') !== '1') return;
+
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(SCROLL_KEY) || 'null');
+      sessionStorage.removeItem(SCROLL_KEY);
+      if (!saved || !Number.isFinite(saved.y) || Date.now() - saved.at > 60 * 60 * 1000) return;
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => window.scrollTo({ top: saved.y, behavior: 'auto' }));
+      });
+    } catch {
+      // Ignore malformed or unavailable session storage.
+    }
+
+    const cleanUrl = new URL(window.location.href);
+    cleanUrl.searchParams.delete('restore');
+    window.history.replaceState(null, '', cleanUrl);
   }
 
   function rewriteResourceUrls(root) {
@@ -36,7 +66,8 @@
         if (/^index\.html?$/i.test(relative)) {
           node.href = 'index.html';
         } else {
-          node.href = `page.html?src=${encodeURIComponent(relative)}`;
+          node.href = `page.html?src=${encodeURIComponent(relative)}&from=home`;
+          node.addEventListener('click', rememberHomePosition);
         }
         return;
       }
@@ -101,6 +132,7 @@
       const original = prepareOriginalContent(sourceContent);
 
       host.replaceChildren(original);
+      restoreHomePositionIfRequested();
       document.dispatchEvent(new CustomEvent('handbook:content-loaded'));
     } catch (error) {
       host.innerHTML = '<p class="legacy-note">Не удалось загрузить оригинальную главную страницу.</p>';
