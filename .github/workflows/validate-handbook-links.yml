@@ -5,6 +5,7 @@ on:
     paths:
       - 'sourse/**'
       - 'tools/build_scheme_index.py'
+      - 'tools/build_home_tables.py'
       - '.github/workflows/validate-handbook-links.yml'
   workflow_dispatch:
 
@@ -27,6 +28,13 @@ jobs:
       - name: Build and validate scheme index
         run: |
           python tools/build_scheme_index.py \
+            --desktop 'sourse/desktop/Справочник от 09.12.2024 HTML/index.html' \
+            --mobile 'sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML/index.html' \
+            --output site/shared/data
+
+      - name: Extract original homepage tables
+        run: |
+          python tools/build_home_tables.py \
             --desktop 'sourse/desktop/Справочник от 09.12.2024 HTML/index.html' \
             --mobile 'sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML/index.html' \
             --output site/shared/data
