@@ -18,21 +18,32 @@
       "slots": 24,
       "rpm": 3000,
       "phases": 3,
-      "poles": 2
+      "poles": 2,
+      "expected": { "min_matches": 1 }
     },
     {
       "id": "36-1500",
       "slots": 36,
       "rpm": 1500,
       "phases": 3,
-      "poles": 4
+      "poles": 4,
+      "expected": { "min_matches": 1 }
     },
     {
       "id": "48-1000",
       "slots": 48,
       "rpm": 1000,
       "phases": 3,
-      "poles": 6
+      "poles": 6,
+      "expected": { "min_matches": 1 }
+    },
+    {
+      "id": "negative-37-777",
+      "slots": 37,
+      "rpm": 777,
+      "phases": 3,
+      "poles": null,
+      "expected": { "max_matches": 0 }
     }
   ]
 }
