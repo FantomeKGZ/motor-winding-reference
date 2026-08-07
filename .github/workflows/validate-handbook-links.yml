@@ -10,6 +10,7 @@ on:
       - 'tools/build_page_inventory.py'
       - 'tools/build_search_index.py'
       - 'tools/build_scheme_catalog.py'
+      - 'tools/validate_scheme_catalog.py'
       - '.github/workflows/validate-handbook-links.yml'
   workflow_dispatch:
 
@@ -70,6 +71,13 @@ jobs:
             --desktop-root 'sourse/desktop/Справочник от 09.12.2024 HTML' \
             --mobile-root 'sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML' \
             --output site/shared/data
+
+      - name: Validate CoilMaster scheme catalogs
+        run: |
+          python tools/validate_scheme_catalog.py \
+            --desktop site/shared/data/desktop-scheme-catalog.json \
+            --mobile site/shared/data/mobile-scheme-catalog.json \
+            --report site/shared/data/scheme-catalog-validation.json
 
       - name: Upload generated reports
         if: always()
