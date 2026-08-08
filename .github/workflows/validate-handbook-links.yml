@@ -11,6 +11,7 @@ on:
       - 'tools/build_search_index.py'
       - 'tools/build_scheme_catalog.py'
       - 'tools/repair_scheme_catalog_images.py'
+      - 'tools/refine_connection_options.py'
       - 'tools/validate_scheme_catalog.py'
       - 'tools/validate_scheme_catalog_images.py'
       - 'tools/validate_connection_option_images.py'
@@ -87,6 +88,18 @@ jobs:
             site/shared/data/mobile-scheme-catalog.json \
             'sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML' \
             --report site/shared/data/mobile-scheme-catalog-image-repair.json
+
+      - name: Refine connection options
+        run: |
+          python tools/refine_connection_options.py \
+            site/shared/data/desktop-scheme-catalog.json \
+            'sourse/desktop/Справочник от 09.12.2024 HTML' \
+            --report site/shared/data/desktop-connection-refinement.json
+
+          python tools/refine_connection_options.py \
+            site/shared/data/mobile-scheme-catalog.json \
+            'sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML' \
+            --report site/shared/data/mobile-connection-refinement.json
 
       - name: Validate scheme catalog layout images
         run: |
