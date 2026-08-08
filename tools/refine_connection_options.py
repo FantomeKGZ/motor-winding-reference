@@ -13,6 +13,9 @@ Rules:
   rejected;
 - single-phase pages are recognized as either a winding-connection drawing or
   a motor-to-mains connection drawing when the legacy caption says so;
+- two-speed pages are recognized as winding-connection and mains-connection
+  drawings; explicit parallel branches and phase-connection notation are kept
+  as metadata instead of being guessed from file names;
 - a concrete image is used only when it is in the caption paragraph or one of
   the next three paragraphs;
 - when a page/type is known but a concrete image cannot be bound safely, keep a
@@ -56,20 +59,34 @@ def is_marker(path: str | None) -> bool:
 
 
 def parallel_branches(text: str) -> list[int]:
-    return sorted({int(match.group(1)) for match in re.finditer(r"[аa]\s*=\s*(\d+)", text or "", re.I)})
+    values: set[int] = set()
+    for match in re.finditer(r"[аa]\s*=\s*(\d+(?:\s*[/,;]\s*\d+)*)", text or "", re.I):
+        for token in re.findall(r"\d+", match.group(1)):
+            values.add(int(token))
+    return sorted(values)
+
+
+def phase_connection(text: str) -> str | None:
+    match = re.search(r"соединени[ея]\s+фаз\s*[:\-]?\s*([^.;]+)", clean(text), re.I)
+    if not match:
+        return None
+    value = clean(match.group(1))
+    return value or None
 
 
 def connection_kinds(text: str) -> list[str]:
     source = norm(text)
     kinds: list[str] = []
 
-    # Single-phase pages frequently do not use star/delta terminology at all.
-    # Their captions do explicitly distinguish the winding connection drawing
-    # from the diagram showing how the motor is connected to the mains.
     if re.search(r"схем[аы]\s+соединени[йя].{0,35}однофазн.{0,20}обмот", source):
         kinds.append("single_phase_winding")
     if re.search(r"схем[аы]\s+подключени[йя].{0,35}однофазн.{0,35}(?:двигател|электродвигател).{0,20}(?:к\s+)?сети", source):
         kinds.append("single_phase_supply")
+
+    if re.search(r"схем[аы]\s+соединени[йя].{0,40}двухскоростн.{0,25}(?:обмот|электродвигател)", source):
+        kinds.append("two_speed_winding")
+    if re.search(r"схем[аы]\s+подключени[йя].{0,40}двухскоростн.{0,35}(?:двигател|электродвигател).{0,20}(?:к\s+)?сети", source):
+        kinds.append("two_speed_supply")
 
     star_delta = bool(re.search(r"звезд.{0,18}(?:и|/|-)?.{0,8}треуг", source))
     if star_delta:
@@ -169,6 +186,7 @@ def inspect_page(source_root: Path, page: str) -> dict:
         if not image:
             continue
         branches = parallel_branches(text)
+        phase = phase_connection(text)
         for kind in kinds:
             key = (kind, image)
             if key in seen:
@@ -180,6 +198,7 @@ def inspect_page(source_root: Path, page: str) -> dict:
                 "image": image,
                 "description": text,
                 "parallel_branches": branches,
+                "phase_connection": phase,
                 "scope": "image",
             })
 
@@ -194,6 +213,7 @@ def inspect_page(source_root: Path, page: str) -> dict:
             "image": None,
             "description": doc.title,
             "parallel_branches": parallel_branches(doc.title),
+            "phase_connection": phase_connection(doc.title),
             "scope": "page",
         })
 
@@ -204,6 +224,7 @@ def inspect_page(source_root: Path, page: str) -> dict:
             "image": None,
             "description": doc.title,
             "parallel_branches": parallel_branches(doc.title),
+            "phase_connection": phase_connection(doc.title),
             "scope": "page",
         })
 
@@ -214,6 +235,7 @@ def inspect_page(source_root: Path, page: str) -> dict:
             "image": item["image"],
             "description": item["description"],
             "parallel_branches": item.get("parallel_branches", []),
+            "phase_connection": item.get("phase_connection"),
         }
         for item in image_options
     ]
