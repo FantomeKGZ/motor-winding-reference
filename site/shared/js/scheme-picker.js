@@ -24,10 +24,13 @@
     else if (type === 'dahlander') label = 'Даландер';
     else if (type === 'single_phase_winding') label = 'Соединение однофазной обмотки';
     else if (type === 'single_phase_supply') label = 'Подключение однофазного двигателя к сети';
+    else if (type === 'two_speed_winding') label = 'Соединение двухскоростной обмотки';
+    else if (type === 'two_speed_supply') label = 'Подключение двухскоростного двигателя к сети';
     else label = item?.title || item?.page || 'Схема подключения';
 
     const branches = item?.parallel_branches || item?.parallelBranches || [];
-    if (branches.length) label += ` · a=${branches.join(', ')}`;
+    if (branches.length) label += ` · a=${branches.join('/')}`;
+    if (item?.phase_connection) label += ` · ${item.phase_connection}`;
     return label;
   }
 
@@ -91,7 +94,7 @@
       const branches = option.parallel_branches || option.parallelBranches || [];
       if (Number.isFinite(motorBranch) && branches.length && !branches.some((value) => Number(value) === motorBranch)) {
         card.classList.add('is-nonmatching');
-        card.title = `Вариант относится к a=${branches.join(', ')}, а в карточке двигателя a=${motorBranch}`;
+        card.title = `Вариант относится к a=${branches.join('/')}, а в карточке двигателя a=${motorBranch}`;
       }
       if (option.image) {
         const img = document.createElement('img');
