@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Тест карточки двигателя — CoilMaster</title>
+  <title>Тест карточки двигателя — CoilMaster Mobile</title>
   <link rel="stylesheet" href="../shared/css/base.css">
   <link rel="stylesheet" href="../shared/css/scheme-picker.css">
   <link rel="stylesheet" href="../shared/css/motor-scheme-widget.css">
@@ -13,10 +13,16 @@
 <main class="cm-demo-page" data-motor-card-demo>
   <a class="cm-demo-back" href="index.html">← К справочнику</a>
   <h1>Тест карточки двигателя</h1>
-  <p class="cm-demo-note"><strong>Только внешний сайт.</strong> ESP32 здесь не используется. Проверяется полный пользовательский сценарий выбора укладки и схемы подключения.</p>
+  <p class="cm-demo-note"><strong>Мобильный внешний тест.</strong> Страница использует мобильный каталог и мобильные legacy-страницы, но не подключается к ESP32 и ничего туда не записывает.</p>
+
+  <section class="cm-demo-presets" aria-label="Тестовые двигатели">
+    <strong>Тестовый двигатель:</strong>
+    <button type="button" data-demo-preset="three-phase">36 пазов · 3000 об/мин · трёхфазный</button>
+    <button type="button" data-demo-preset="single-phase">12 пазов · 3000 об/мин · однофазный</button>
+  </section>
 
   <div class="cm-demo-toolbar">
-    <button type="button" data-demo-reload>Сбросить тест</button>
+    <button type="button" data-demo-reload>Сбросить привязку</button>
     <span>Подходящих схем: <strong data-demo-candidate-count>0</strong></span>
     <span class="cm-demo-status" data-demo-status role="status"></span>
   </div>
@@ -26,7 +32,7 @@
     <section class="cm-demo-card">
       <div data-demo-widget></div>
       <div class="cm-demo-json">
-        <strong>Будущая запись ESP32:</strong>
+        <strong>Что позже будет храниться в ESP32:</strong>
         <pre data-demo-binding-json>{"winding_reference": null}</pre>
       </div>
     </section>
