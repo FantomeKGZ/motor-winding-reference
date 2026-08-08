@@ -33,12 +33,19 @@
 
   function connectionLabel(item) {
     const type = item?.type || item?.kind || '';
-    if (type === 'star') return 'Звезда';
-    if (type === 'delta') return 'Треугольник';
-    if (type === 'double_star') return 'Двойная звезда';
-    if (type === 'dahlander') return 'Даландер';
-    if (type === 'star_delta') return 'Звезда / треугольник';
-    return item?.title || item?.page || 'Схема подключения';
+    let label = '';
+    if (type === 'star') label = 'Звезда';
+    else if (type === 'delta') label = 'Треугольник';
+    else if (type === 'double_star') label = 'Двойная звезда';
+    else if (type === 'dahlander') label = 'Даландер';
+    else if (type === 'star_delta') label = 'Звезда / треугольник';
+    else if (type === 'single_phase_winding') label = 'Соединение однофазной обмотки';
+    else if (type === 'single_phase_supply') label = 'Подключение однофазного двигателя к сети';
+    else label = item?.title || item?.page || 'Схема подключения';
+
+    const branches = item?.parallel_branches || item?.parallelBranches || [];
+    if (branches.length) label += ` · a=${branches.join(', ')}`;
+    return label;
   }
 
   function normalizeScheme(input = {}) {
