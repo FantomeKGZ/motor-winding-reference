@@ -9,7 +9,13 @@ import re
 from pathlib import Path
 from urllib.parse import unquote
 
-MARKER_RE = re.compile(r"(?:^|/)(?:images/sovmob/)?met\d+[^/]*\.(?:gif|jpe?g|png|webp)$", re.I)
+# Important: images/sovmob/ contains BOTH small recommendation markers and many
+# real winding drawings. Do not reject the whole directory. Only reject paths
+# whose file name is clearly a marker/icon asset.
+MARKER_RE = re.compile(
+    r"(?:^|/)(?:met\d+|marker|icon|recommend)[^/]*\.(?:gif|jpe?g|png|webp)$",
+    re.I,
+)
 
 
 def norm_path(value: str | None) -> str:
@@ -20,7 +26,7 @@ def suspicious(path: str | None) -> bool:
     value = norm_path(path)
     if not value:
         return True
-    return bool(MARKER_RE.search(value)) or "/images/sovmob/" in f"/{value.lower()}"
+    return bool(MARKER_RE.search(value))
 
 
 def main() -> int:
