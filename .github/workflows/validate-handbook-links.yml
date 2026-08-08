@@ -16,6 +16,7 @@ on:
       - 'tools/validate_scheme_catalog_images.py'
       - 'tools/validate_connection_option_images.py'
       - 'tools/audit_page_scoped_connections.py'
+      - 'tools/audit_connection_page_templates.py'
       - '.github/workflows/validate-handbook-links.yml'
   workflow_dispatch:
 
@@ -130,6 +131,18 @@ jobs:
           python tools/audit_page_scoped_connections.py \
             site/shared/data/mobile-scheme-catalog.json \
             --report site/shared/data/mobile-page-scoped-connection-audit.json
+
+      - name: Audit ambiguous connection page templates
+        run: |
+          python tools/audit_connection_page_templates.py \
+            site/shared/data/desktop-scheme-catalog.json \
+            'sourse/desktop/Справочник от 09.12.2024 HTML' \
+            --report site/shared/data/desktop-connection-page-template-audit.json
+
+          python tools/audit_connection_page_templates.py \
+            site/shared/data/mobile-scheme-catalog.json \
+            'sourse/mobile/Справочник от 09.12.2024 для мобильных устройств HTML' \
+            --report site/shared/data/mobile-connection-page-template-audit.json
 
       - name: Validate CoilMaster scheme catalogs
         run: |
