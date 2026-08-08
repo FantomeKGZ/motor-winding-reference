@@ -1,21 +1,36 @@
 (() => {
   'use strict';
 
-  const DEMO_MOTOR = {
-    id: 'demo-motor-36-3000',
-    model: 'Тестовый двигатель 36/3000',
-    slots: 36,
-    rpm: 3000,
-    poles: 2,
-    q: 6,
-    winding_type: 'two_layer',
-    parallel_branches: 2,
-    winding_pitch: '15',
-    revision: 1,
+  const DEMO_MOTORS = {
+    'three-phase': {
+      id: 'demo-motor-36-3000',
+      model: 'Тестовый трёхфазный двигатель 36/3000',
+      slots: 36,
+      rpm: 3000,
+      poles: 2,
+      q: 6,
+      winding_type: 'two_layer',
+      parallel_branches: 2,
+      winding_pitch: '15',
+      revision: 1,
+    },
+    'single-phase': {
+      id: 'demo-motor-12-3000-single-phase',
+      model: 'Тестовый однофазный двигатель 12/3000',
+      slots: 12,
+      rpm: 3000,
+      poles: 2,
+      q: 3,
+      winding_type: 'single_phase',
+      parallel_branches: 2,
+      winding_pitch: '5;3',
+      revision: 1,
+    },
   };
 
   const state = {
-    motor: { ...DEMO_MOTOR },
+    preset: 'three-phase',
+    motor: { ...DEMO_MOTORS['three-phase'] },
     candidates: [],
     binding: null,
     scheme: null,
@@ -60,6 +75,14 @@
 
   function renderBindingJson(container) {
     container.textContent = JSON.stringify({ winding_reference: state.binding }, null, 2);
+  }
+
+  function renderPresetButtons(root) {
+    root.querySelectorAll('[data-demo-preset]').forEach((button) => {
+      const active = button.dataset.demoPreset === state.preset;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
   }
 
   function renderWidget(container, jsonContainer, status) {
@@ -125,9 +148,12 @@
     const count = root.querySelector('[data-demo-candidate-count]');
     const reload = root.querySelector('[data-demo-reload]');
 
-    renderMotorSummary(summary);
-
     async function loadCandidates() {
+      renderMotorSummary(summary);
+      renderPresetButtons(root);
+      renderBindingJson(jsonHost);
+      count.textContent = '0';
+      widgetHost.replaceChildren();
       status.textContent = 'Загрузка каталога схем…';
       const client = window.CoilMasterSchemeCatalogClient;
       if (!client) {
@@ -150,8 +176,24 @@
       }
     }
 
+    root.querySelectorAll('[data-demo-preset]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const preset = button.dataset.demoPreset;
+        if (!DEMO_MOTORS[preset] || preset === state.preset) return;
+        state.preset = preset;
+        state.motor = { ...DEMO_MOTORS[preset] };
+        state.binding = null;
+        state.scheme = null;
+        state.connection = null;
+        state.candidates = [];
+        await loadCandidates();
+      });
+    });
+
     reload?.addEventListener('click', () => {
       state.binding = null;
+      state.scheme = null;
+      state.connection = null;
       loadCandidates();
     });
 
