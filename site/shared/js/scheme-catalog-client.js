@@ -32,6 +32,13 @@
     catch { return String(value || '').replace(/\\/g, '/').replace(/^\.\//, '').replace(/^\/+/, ''); }
   }
 
+  function isMarkerImagePath(value) {
+    const path = normalizePath(value).toLowerCase();
+    if (!path) return true;
+    if (path.includes('images/sovmob/')) return true;
+    return /(?:^|\/)(?:met\d+|marker|icon|recommend)[^/]*\.(?:gif|jpe?g|png|webp)$/i.test(path);
+  }
+
   async function fetchLegacyDocument(target) {
     const key = normalizePath(target || 'index.html');
     if (legacyPageCache.has(key)) return legacyPageCache.get(key);
@@ -73,11 +80,15 @@
   function connectionKinds(text) {
     const source = normalized(text);
     const result = [];
-    if (/в\s+звезд|соединени.{0,35}звезд/.test(source)) result.push('star');
-    if (/в\s+треугольник|соединени.{0,35}треугольник/.test(source)) result.push('delta');
+    const starDelta = /звезд.{0,18}(?:и|\/|-)?.{0,8}треуг/.test(source);
+    if (starDelta) {
+      result.push('star_delta');
+    } else {
+      if (/в\s+звезд|соединени.{0,35}звезд/.test(source)) result.push('star');
+      if (/в\s+треугольник|соединени.{0,35}треугольник/.test(source)) result.push('delta');
+    }
     if (/даландер|dahlander/.test(source)) result.push('dahlander');
     if (/двойн.{0,10}звезд|\byy\b/.test(source)) result.push('double_star');
-    if (/звезд.{0,10}треуг/.test(source)) result.push('star_delta');
     return Array.from(new Set(result));
   }
 
@@ -106,11 +117,18 @@
     };
   }
 
+  function firstRealImageIn(node) {
+    if (!node) return null;
+    const images = node.matches?.('img[src]') ? [node] : Array.from(node.querySelectorAll?.('img[src]') || []);
+    return images.find((image) => !isMarkerImagePath(image.getAttribute('src'))) || null;
+  }
+
   function findFollowingImage(paragraph) {
-    if (paragraph.querySelector('img[src]')) return paragraph.querySelector('img[src]');
+    const direct = firstRealImageIn(paragraph);
+    if (direct) return direct;
     let node = paragraph.nextElementSibling;
-    for (let step = 0; node && step < 2; step += 1, node = node.nextElementSibling) {
-      const image = node.matches?.('img[src]') ? node : node.querySelector?.('img[src]');
+    for (let step = 0; node && step < 3; step += 1, node = node.nextElementSibling) {
+      const image = firstRealImageIn(node);
       if (image) return image;
     }
     return null;
@@ -132,9 +150,9 @@
         const ptext = clean(paragraph.textContent);
         const kinds = connectionKinds(ptext);
         if (!kinds.length) continue;
-        const image = paragraph.querySelector('img[src]') || paragraphs[i + 1]?.querySelector('img[src]');
+        const image = findFollowingImage(paragraph);
         const imagePath = normalizePath(image?.getAttribute('src'));
-        if (!imagePath) continue;
+        if (!imagePath || isMarkerImagePath(imagePath)) continue;
         for (const kind of kinds) {
           const key = `${kind}|${imagePath}`;
           if (seen.has(key)) continue;
@@ -194,7 +212,7 @@
       if (!normalized(description).includes('схема укладки')) continue;
       const imageNode = findFollowingImage(paragraph);
       const image = normalizePath(imageNode?.getAttribute('src'));
-      if (!image || seenImages.has(image)) continue;
+      if (!image || isMarkerImagePath(image) || seenImages.has(image)) continue;
       seenImages.add(image);
 
       const connectionPages = [];
@@ -208,7 +226,7 @@
       const connections = await Promise.all(connectionPages.map(inspectConnection));
       const connectionOptions = [];
       const seenIds = new Set();
-      connections.forEach((page) => page.options.forEach((option) => {
+      connections.forEach((pageInfo) => pageInfo.options.forEach((option) => {
         if (!seenIds.has(option.connection_id)) {
           seenIds.add(option.connection_id);
           connectionOptions.push(option);
