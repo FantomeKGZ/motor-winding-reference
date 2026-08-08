@@ -28,15 +28,15 @@
   }
 
   function normalizePath(value) {
-    try { return decodeURIComponent(String(value || '').replace(/\\/g, '/').replace(/^\.\//, '').replace(/^\/+/, '')); }
-    catch { return String(value || '').replace(/\\/g, '/').replace(/^\.\//, '').replace(/^\/+/, ''); }
+    const raw = String(value || '').replace(/\\/g, '/').replace(/^\.\//, '').replace(/^\/+/, '');
+    try { return decodeURIComponent(raw); } catch { return raw; }
   }
 
   function isMarkerImagePath(value) {
     const path = normalizePath(value).toLowerCase();
     if (!path) return true;
-    if (path.includes('images/sovmob/')) return true;
-    return /(?:^|\/)(?:met\d+|marker|icon|recommend)[^/]*\.(?:gif|jpe?g|png|webp)$/i.test(path);
+    const base = path.split('/').pop() || '';
+    return /^(?:met\d+|marker|icon|recommend)[^/]*\.(?:gif|jpe?g|png|webp)$/i.test(base);
   }
 
   async function fetchLegacyDocument(target) {
@@ -73,22 +73,61 @@
       ['concentric', /вразвалк/],
       ['expanded_phase_zone', /расширенн.{0,40}фазн.{0,30}зон/],
       ['continuous_phase_zone', /сплошн.{0,30}фазн.{0,30}зон/],
+      ['single_phase', /однофазн/],
+      ['two_speed', /двухскорост/],
+      ['three_speed', /трехскорост/],
+      ['combined', /совмещенн|совмещённ/],
     ];
     return rules.filter(([, re]) => re.test(source)).map(([name]) => name);
+  }
+
+  function extractBranches(text) {
+    const values = Array.from(String(text || '').matchAll(/[аa]\s*=\s*(\d+(?:\s*\/\s*\d+)?)/giu), (match) => match[1]);
+    const numbers = [];
+    values.forEach((value) => value.split('/').forEach((part) => {
+      const number = Number(part.trim());
+      if (Number.isFinite(number)) numbers.push(number);
+    }));
+    return Array.from(new Set(numbers)).sort((a, b) => a - b);
+  }
+
+  function phaseConnection(text) {
+    const source = clean(text).replace(/△/g, 'Δ');
+    const match = source.match(/соединени[ея]\s+фаз[^YΔ]{0,24}([YΔ]+(?:\s*\/\s*[YΔ]+)+|[YΔ]{1,12})/iu);
+    return match ? match[1].replace(/\s+/g, '') : null;
   }
 
   function connectionKinds(text) {
     const source = normalized(text);
     const result = [];
-    const starDelta = /звезд.{0,18}(?:и|\/|-)?.{0,8}треуг/.test(source);
-    if (starDelta) {
-      result.push('star_delta');
-    } else {
-      if (/в\s+звезд|соединени.{0,35}звезд/.test(source)) result.push('star');
-      if (/в\s+треугольник|соединени.{0,35}треугольник/.test(source)) result.push('delta');
+    const isSupply = /подключени[ея].{0,80}(?:к\s+сети|электродвигател)/.test(source) || /электродвигател.{0,80}к\s+сети/.test(source);
+    const isConnection = /схем[аы]\s+соединени/.test(source) || /соединени[ея]\s+обмот/.test(source);
+
+    if (/однофазн/.test(source)) {
+      if (isSupply || /подключени/.test(source)) result.push('single_phase_supply');
+      else if (isConnection) result.push('single_phase_winding');
     }
-    if (/даландер|dahlander/.test(source)) result.push('dahlander');
-    if (/двойн.{0,10}звезд|\byy\b/.test(source)) result.push('double_star');
+    if (/двухскорост/.test(source)) {
+      if (isSupply || /подключени/.test(source)) result.push('two_speed_supply');
+      else if (isConnection) result.push('two_speed_winding');
+    }
+    if (/трехскорост/.test(source)) {
+      if (isSupply || /подключени/.test(source)) result.push('three_speed_supply');
+      else if (isConnection) result.push('three_speed_winding');
+    }
+    if (/совмещенн|совмещённ/.test(source) && isConnection) result.push('combined_winding');
+
+    if (!result.length) {
+      const starDelta = /звезд.{0,18}(?:и|\/|-)?.{0,8}треуг/.test(source);
+      if (starDelta) {
+        result.push('star_delta');
+      } else {
+        if (/в\s+звезд|соединени.{0,35}звезд/.test(source)) result.push('star');
+        if (/в\s+треугольник|соединени.{0,35}треугольник/.test(source)) result.push('delta');
+      }
+      if (/даландер|dahlander/.test(source)) result.push('dahlander');
+      if (/двойн.{0,10}звезд|\byy\b/.test(source)) result.push('double_star');
+    }
     return Array.from(new Set(result));
   }
 
@@ -97,46 +136,81 @@
     return match ? clean(match[1]).replace(/\s+/g, '') : null;
   }
 
-  function extractBranches(text) {
-    return Array.from(new Set(Array.from(String(text || '').matchAll(/[аa]\s*=\s*(\d+)/giu), (m) => Number(m[1]))))
-      .filter(Number.isFinite).sort((a, b) => a - b);
+  function tableValue(doc, labelPattern) {
+    for (const row of doc.querySelectorAll('tr')) {
+      const cells = Array.from(row.querySelectorAll('td,th')).map((cell) => clean(cell.textContent));
+      if (!cells.some((value) => labelPattern.test(normalized(value)))) continue;
+      for (let index = cells.length - 1; index >= 0; index -= 1) {
+        const match = cells[index].match(/[-+]?\d+(?:[.,]\d+)?/);
+        if (match) return Number(match[0].replace(',', '.'));
+      }
+    }
+    return null;
   }
 
   function pageParameters(doc) {
     const text = clean(`${doc.title || ''} ${doc.body?.textContent || ''}`);
     const number = (re) => {
-      const m = text.match(re);
-      return m ? Number(m[1]) : null;
+      const match = text.match(re);
+      return match ? Number(match[1]) : null;
     };
-    const qMatch = text.match(/\bq\s*=\s*([\d.,]+)/i);
+    const qText = text.match(/\bq\s*=\s*([\d.,]+)/i);
     return {
-      slots: number(/(?:количеств[оа]\s+пазов|пазов)[^0-9]{0,30}(\d+)/i),
-      rpm: number(/(\d{2,5})\s*об(?:\/|\.|\s)*мин/i),
-      poles: number(/2p\s*=\s*(\d+)/i),
-      q: qMatch ? Number(qMatch[1].replace(',', '.')) : null,
+      slots: tableValue(doc, /количеств.{0,12}паз|^z1$/) ?? number(/(?:количеств[оа]\s+пазов|пазов)[^0-9]{0,30}(\d+)/i),
+      rpm: tableValue(doc, /частот.{0,20}вращ/) ?? number(/(\d{2,5})\s*об(?:\/|\.|\s)*мин/i),
+      poles: tableValue(doc, /числ.{0,10}полюс|^2p$/) ?? number(/2p\s*=\s*(\d+)/i),
+      q: tableValue(doc, /пазов.{0,30}полюс.{0,20}фаз|^q$/) ?? (qText ? Number(qText[1].replace(',', '.')) : null),
     };
   }
 
-  function firstRealImageIn(node) {
-    if (!node) return null;
+  function realImagesIn(node) {
+    if (!node) return [];
     const images = node.matches?.('img[src]') ? [node] : Array.from(node.querySelectorAll?.('img[src]') || []);
-    return images.find((image) => !isMarkerImagePath(image.getAttribute('src'))) || null;
+    return images.filter((image) => !isMarkerImagePath(image.getAttribute('src')));
+  }
+
+  function firstRealImageIn(node) {
+    return realImagesIn(node)[0] || null;
   }
 
   function findFollowingImage(paragraph) {
     const direct = firstRealImageIn(paragraph);
     if (direct) return direct;
     let node = paragraph.nextElementSibling;
-    for (let step = 0; node && step < 3; step += 1, node = node.nextElementSibling) {
+    for (let step = 0; node && step < 4; step += 1, node = node.nextElementSibling) {
       const image = firstRealImageIn(node);
       if (image) return image;
     }
     return null;
   }
 
+  function imagesForConnectionCaption(paragraphs, index) {
+    const result = [];
+    const seen = new Set();
+    const add = (node) => realImagesIn(node).forEach((image) => {
+      const path = normalizePath(image.getAttribute('src'));
+      if (!path || seen.has(path)) return;
+      seen.add(path);
+      result.push(image);
+    });
+
+    add(paragraphs[index]);
+    for (let offset = 1; offset <= 8 && index + offset < paragraphs.length; offset += 1) {
+      const next = paragraphs[index + offset];
+      const text = clean(next.textContent);
+      const kinds = connectionKinds(text);
+      if (kinds.length) break;
+      if (text && /структурн.{0,20}схем|схем[аы]\s+(?:соединени|подключени)/i.test(normalized(text))) break;
+      add(next);
+      if (text && !/вариант\s*№?\s*\d+/i.test(text) && result.length) break;
+    }
+    return result;
+  }
+
   async function inspectConnection(page) {
     page = normalizePath(page);
     if (connectionCache.has(page)) return connectionCache.get(page);
+
     const promise = (async () => {
       const doc = await fetchLegacyDocument(page);
       const pageId = await stableId('CM-CON-PAGE', page);
@@ -145,32 +219,40 @@
       const seen = new Set();
       const paragraphs = Array.from(doc.querySelectorAll('p'));
 
-      for (let i = 0; i < paragraphs.length; i += 1) {
-        const paragraph = paragraphs[i];
-        const ptext = clean(paragraph.textContent);
-        const kinds = connectionKinds(ptext);
+      for (let index = 0; index < paragraphs.length; index += 1) {
+        const paragraph = paragraphs[index];
+        const text = clean(paragraph.textContent);
+        const kinds = connectionKinds(text);
         if (!kinds.length) continue;
-        const image = findFollowingImage(paragraph);
-        const imagePath = normalizePath(image?.getAttribute('src'));
-        if (!imagePath || isMarkerImagePath(imagePath)) continue;
-        for (const kind of kinds) {
-          const key = `${kind}|${imagePath}`;
-          if (seen.has(key)) continue;
-          seen.add(key);
-          imageOptions.push({
-            connection_id: await stableId('CM-CON', page, imagePath, kind),
-            type: kind,
-            image: imagePath,
-            description: ptext,
-            scope: 'image',
-            page,
-            page_id: pageId,
-          });
+        const images = imagesForConnectionCaption(paragraphs, index);
+        if (!images.length) continue;
+
+        const branches = extractBranches(text);
+        const phases = phaseConnection(text);
+        for (const image of images) {
+          const imagePath = normalizePath(image.getAttribute('src'));
+          if (!imagePath || isMarkerImagePath(imagePath)) continue;
+          for (const kind of kinds) {
+            const key = `${kind}|${imagePath}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            imageOptions.push({
+              connection_id: await stableId('CM-CON', page, imagePath, kind),
+              type: kind,
+              image: imagePath,
+              description: text,
+              scope: 'image',
+              page,
+              page_id: pageId,
+              parallel_branches: branches,
+              phase_connection: phases,
+            });
+          }
         }
       }
 
       const options = [...imageOptions];
-      const imageKinds = new Set(imageOptions.map((x) => x.type));
+      const imageKinds = new Set(imageOptions.map((item) => item.type));
       for (const kind of pageKinds) {
         if (imageKinds.has(kind)) continue;
         options.push({
@@ -181,8 +263,11 @@
           scope: 'page',
           page,
           page_id: pageId,
+          parallel_branches: extractBranches(doc.title),
+          phase_connection: phaseConnection(doc.title),
         });
       }
+
       if (!options.length) {
         options.push({
           connection_id: await stableId('CM-CON', page, '', 'unknown'),
@@ -192,10 +277,20 @@
           scope: 'page',
           page,
           page_id: pageId,
+          parallel_branches: extractBranches(doc.title),
+          phase_connection: phaseConnection(doc.title),
         });
       }
-      return { page, page_id: pageId, title: clean(doc.title), types: pageKinds, options };
+
+      return {
+        page,
+        page_id: pageId,
+        title: clean(doc.title),
+        types: pageKinds,
+        options,
+      };
     })();
+
     connectionCache.set(page, promise);
     return promise;
   }
@@ -217,20 +312,20 @@
 
       const connectionPages = [];
       const seenPages = new Set();
-      paragraph.querySelectorAll('a[href]').forEach((a) => {
-        const href = normalizePath(a.getAttribute('href'));
+      paragraph.querySelectorAll('a[href]').forEach((anchor) => {
+        const href = normalizePath(anchor.getAttribute('href'));
         if (!/^ss.*\.html?$/i.test(href) || seenPages.has(href.toLowerCase())) return;
         seenPages.add(href.toLowerCase());
         connectionPages.push(href);
       });
+
       const connections = await Promise.all(connectionPages.map(inspectConnection));
       const connectionOptions = [];
       const seenIds = new Set();
       connections.forEach((pageInfo) => pageInfo.options.forEach((option) => {
-        if (!seenIds.has(option.connection_id)) {
-          seenIds.add(option.connection_id);
-          connectionOptions.push(option);
-        }
+        if (seenIds.has(option.connection_id)) return;
+        seenIds.add(option.connection_id);
+        connectionOptions.push(option);
       }));
 
       variants.push({
@@ -255,16 +350,16 @@
   function rowSlots(row) {
     const cells = Array.from(row.querySelectorAll('td, th'));
     for (const cell of cells.slice(0, 2)) {
-      const m = clean(cell.textContent).match(/^\D*(\d{1,3})\b/);
-      if (m) return Number(m[1]);
+      const match = clean(cell.textContent).match(/^\D*(\d{1,3})\b/);
+      if (match) return Number(match[1]);
     }
     return null;
   }
 
   function anchorRpm(anchor) {
     const source = `${anchor.getAttribute('title') || ''} ${anchor.textContent || ''}`;
-    const m = source.match(/(\d{2,5})\s*об(?:\/|\.|\s)*мин/i) || source.match(/\b(\d{3,5})\b/);
-    return m ? Number(m[1]) : null;
+    const match = source.match(/(\d{2,5})\s*об(?:\/|\.|\s)*мин/i) || source.match(/\b(\d{3,5})\b/);
+    return match ? Number(match[1]) : null;
   }
 
   async function legacyTargetsForMotor(motor) {
@@ -279,10 +374,9 @@
         if (!/\.html?$/i.test(href)) return;
         const rpm = anchorRpm(anchor);
         if (motor?.rpm != null && rpm !== Number(motor.rpm)) return;
-        if (!seen.has(href)) {
-          seen.add(href);
-          targets.push(href);
-        }
+        if (seen.has(href)) return;
+        seen.add(href);
+        targets.push(href);
       });
     });
     return targets;
@@ -296,7 +390,10 @@
       runtime: true,
       source: 'legacy-html-fallback',
       schemes: pages.flat(),
-      stats: { schemes: pages.reduce((sum, items) => sum + items.length, 0), pages_with_variants: pages.filter((x) => x.length).length },
+      stats: {
+        schemes: pages.reduce((sum, items) => sum + items.length, 0),
+        pages_with_variants: pages.filter((items) => items.length).length,
+      },
     };
     document.dispatchEvent(new CustomEvent('coilmaster:scheme-catalog-fallback', { detail: { catalog, motor, targets } }));
     return catalog;
@@ -306,7 +403,9 @@
     if (options.catalog) return options.catalog;
     if (!catalogPromise || options.reload) {
       catalogPromise = fetch(options.url || catalogUrl(), {
-        method: 'GET', headers: { Accept: 'application/json' }, cache: options.reload ? 'no-store' : 'default',
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        cache: options.reload ? 'no-store' : 'default',
       }).then(async (response) => {
         if (!response.ok) throw new Error(`Scheme catalog unavailable: HTTP ${response.status}`);
         const catalog = await response.json();
@@ -324,7 +423,8 @@
 
   function equalNumber(a, b, tolerance = 0) {
     if (a == null || b == null || a === '' || b === '') return true;
-    const x = Number(a); const y = Number(b);
+    const x = Number(a);
+    const y = Number(b);
     return Number.isFinite(x) && Number.isFinite(y) && Math.abs(x - y) <= tolerance;
   }
 
@@ -377,7 +477,12 @@
     }
     const candidates = candidatesFromCatalog(catalog, motor);
     document.dispatchEvent(new CustomEvent('coilmaster:scheme-candidates-ready', {
-      detail: { motor, candidates, catalogVersion: catalog.version || null, runtimeFallback: Boolean(catalog.runtime) },
+      detail: {
+        motor,
+        candidates,
+        catalogVersion: catalog.version || null,
+        runtimeFallback: Boolean(catalog.runtime),
+      },
     }));
     return candidates;
   }
