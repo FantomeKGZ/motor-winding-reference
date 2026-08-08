@@ -32,13 +32,17 @@ jobs:
           node --check site/shared/js/scheme-picker.js
           node --check site/shared/js/motor-scheme-widget.js
 
-      - name: Validate demo wiring
+      - name: Validate demo wiring and fallback safety
         run: |
           python - <<'PY'
           from pathlib import Path
 
-          html = Path('site/desktop/motor-card-demo.html').read_text(encoding='utf-8')
-          js = Path('site/shared/js/motor-card-demo.js').read_text(encoding='utf-8')
+          desktop = Path('site/desktop/motor-card-demo.html').read_text(encoding='utf-8')
+          mobile = Path('site/mobile/motor-card-demo.html').read_text(encoding='utf-8')
+          demo_js = Path('site/shared/js/motor-card-demo.js').read_text(encoding='utf-8')
+          catalog_js = Path('site/shared/js/scheme-catalog-client.js').read_text(encoding='utf-8')
+          picker_js = Path('site/shared/js/scheme-picker.js').read_text(encoding='utf-8')
+          widget_js = Path('site/shared/js/motor-scheme-widget.js').read_text(encoding='utf-8')
 
           required_assets = [
               '../shared/js/scheme-catalog-client.js',
@@ -50,21 +54,50 @@ jobs:
               '../shared/css/motor-card-demo.css',
           ]
           required_presets = ['three-phase', 'single-phase']
+          required_runtime_types = [
+              'single_phase_winding',
+              'single_phase_supply',
+              'two_speed_winding',
+              'two_speed_supply',
+              'three_speed_winding',
+              'three_speed_supply',
+          ]
 
           errors = []
-          for asset in required_assets:
-              if asset not in html:
-                  errors.append(f'missing demo asset reference: {asset}')
+          for name, html in [('desktop', desktop), ('mobile', mobile)]:
+              for asset in required_assets:
+                  if asset not in html:
+                      errors.append(f'{name}: missing demo asset reference: {asset}')
+              for preset in required_presets:
+                  if f'data-demo-preset="{preset}"' not in html:
+                      errors.append(f'{name}: missing demo preset button: {preset}')
+
           for preset in required_presets:
-              if f'data-demo-preset="{preset}"' not in html:
-                  errors.append(f'missing demo preset button: {preset}')
-              if f"'{preset}':" not in js:
+              if f"'{preset}':" not in demo_js:
                   errors.append(f'missing demo preset data: {preset}')
 
-          if 'ESP32 не используется' not in js:
+          if 'ESP32 не используется' not in demo_js:
               errors.append('demo safety status must state that ESP32 is not used')
+
+          # A previous fallback bug treated the whole images/sovmob directory as
+          # service icons, although it contains real winding/connection drawings.
+          if "path.includes('images/sovmob/')" in catalog_js or 'path.includes("images/sovmob/")' in catalog_js:
+              errors.append('runtime fallback must not reject the whole images/sovmob directory')
+
+          for kind in required_runtime_types:
+              if kind not in catalog_js:
+                  errors.append(f'runtime fallback missing connection type: {kind}')
+              if kind not in picker_js:
+                  errors.append(f'scheme picker missing connection label: {kind}')
+              if kind not in widget_js:
+                  errors.append(f'motor widget missing connection label: {kind}')
+
+          if 'imagesForConnectionCaption' not in catalog_js:
+              errors.append('runtime fallback must support multiple images after one connection caption')
+          if 'tableValue(doc' not in catalog_js:
+              errors.append('runtime fallback must read legacy table values for Z1/2p/q/rpm')
 
           if errors:
               raise SystemExit('\n'.join(errors))
-          print('Demo wiring OK')
+          print('Demo wiring and runtime fallback safety OK')
           PY
