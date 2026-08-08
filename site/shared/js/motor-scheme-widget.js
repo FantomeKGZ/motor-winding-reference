@@ -43,6 +43,8 @@
     else if (type === 'single_phase_supply') label = 'Подключение однофазного двигателя к сети';
     else if (type === 'two_speed_winding') label = 'Соединение двухскоростной обмотки';
     else if (type === 'two_speed_supply') label = 'Подключение двухскоростного двигателя к сети';
+    else if (type === 'three_speed_winding') label = 'Соединение трёхскоростной обмотки';
+    else if (type === 'three_speed_supply') label = 'Подключение трёхскоростного двигателя к сети';
     else label = item?.title || item?.page || 'Схема подключения';
 
     const branches = item?.parallel_branches || item?.parallelBranches || [];
