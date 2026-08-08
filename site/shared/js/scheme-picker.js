@@ -16,11 +16,19 @@
 
   function connectionLabel(item) {
     const type = item?.type || item?.kind || '';
-    if (type === 'star') return 'Звезда';
-    if (type === 'delta') return 'Треугольник';
-    if (type === 'double_star') return 'Двойная звезда';
-    if (type === 'dahlander') return 'Даландер';
-    return item?.title || item?.page || 'Схема подключения';
+    let label = '';
+    if (type === 'star') label = 'Звезда';
+    else if (type === 'delta') label = 'Треугольник';
+    else if (type === 'star_delta') label = 'Звезда / треугольник';
+    else if (type === 'double_star') label = 'Двойная звезда';
+    else if (type === 'dahlander') label = 'Даландер';
+    else if (type === 'single_phase_winding') label = 'Соединение однофазной обмотки';
+    else if (type === 'single_phase_supply') label = 'Подключение однофазного двигателя к сети';
+    else label = item?.title || item?.page || 'Схема подключения';
+
+    const branches = item?.parallel_branches || item?.parallelBranches || [];
+    if (branches.length) label += ` · a=${branches.join(', ')}`;
+    return label;
   }
 
   function imageUrl(path) {
@@ -69,11 +77,22 @@
       return;
     }
 
+    const motorBranch = Number(state.motor?.parallel_branches);
+    if (Number.isFinite(motorBranch) && options.some((item) => (item.parallel_branches || []).length)) {
+      const matching = options.filter((item) => !(item.parallel_branches || []).length || (item.parallel_branches || []).some((value) => Number(value) === motorBranch)).length;
+      container.append(el('small', 'cm-picker-meta', `Для a=${motorBranch} совместимых вариантов: ${matching}. Остальные оставлены видимыми для ручной проверки.`));
+    }
+
     const grid = el('div', 'cm-picker-connections');
     options.forEach((option) => {
       const card = el('button', 'cm-picker-connection');
       card.type = 'button';
       if (state.selectedConnection?.connection_id === option.connection_id) card.classList.add('is-selected');
+      const branches = option.parallel_branches || option.parallelBranches || [];
+      if (Number.isFinite(motorBranch) && branches.length && !branches.some((value) => Number(value) === motorBranch)) {
+        card.classList.add('is-nonmatching');
+        card.title = `Вариант относится к a=${branches.join(', ')}, а в карточке двигателя a=${motorBranch}`;
+      }
       if (option.image) {
         const img = document.createElement('img');
         img.src = imageUrl(option.image);
