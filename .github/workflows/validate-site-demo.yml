@@ -1,0 +1,70 @@
+name: Validate site demo
+
+on:
+  pull_request:
+    paths:
+      - 'site/desktop/motor-card-demo.html'
+      - 'site/mobile/motor-card-demo.html'
+      - 'site/shared/js/motor-card-demo.js'
+      - 'site/shared/js/scheme-catalog-client.js'
+      - 'site/shared/js/scheme-picker.js'
+      - 'site/shared/js/motor-scheme-widget.js'
+      - 'site/shared/css/motor-card-demo.css'
+      - 'site/shared/css/scheme-picker.css'
+      - 'site/shared/css/motor-scheme-widget.css'
+      - '.github/workflows/validate-site-demo.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate JavaScript syntax
+        run: |
+          node --check site/shared/js/motor-card-demo.js
+          node --check site/shared/js/scheme-catalog-client.js
+          node --check site/shared/js/scheme-picker.js
+          node --check site/shared/js/motor-scheme-widget.js
+
+      - name: Validate demo wiring
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          html = Path('site/desktop/motor-card-demo.html').read_text(encoding='utf-8')
+          js = Path('site/shared/js/motor-card-demo.js').read_text(encoding='utf-8')
+
+          required_assets = [
+              '../shared/js/scheme-catalog-client.js',
+              '../shared/js/scheme-picker.js',
+              '../shared/js/motor-scheme-widget.js',
+              '../shared/js/motor-card-demo.js',
+              '../shared/css/scheme-picker.css',
+              '../shared/css/motor-scheme-widget.css',
+              '../shared/css/motor-card-demo.css',
+          ]
+          required_presets = ['three-phase', 'single-phase']
+
+          errors = []
+          for asset in required_assets:
+              if asset not in html:
+                  errors.append(f'missing demo asset reference: {asset}')
+          for preset in required_presets:
+              if f'data-demo-preset="{preset}"' not in html:
+                  errors.append(f'missing demo preset button: {preset}')
+              if f"'{preset}':" not in js:
+                  errors.append(f'missing demo preset data: {preset}')
+
+          if 'ESP32 не используется' not in js:
+              errors.append('demo safety status must state that ESP32 is not used')
+
+          if errors:
+              raise SystemExit('\n'.join(errors))
+          print('Demo wiring OK')
+          PY
