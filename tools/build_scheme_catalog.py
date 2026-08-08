@@ -23,7 +23,13 @@ BRANCH_RE = re.compile(r"[аa]\s*=\s*(\d+)", re.I)
 RPM_RE = re.compile(r"(\d{2,5})\s*об(?:/|\.|\s)*мин", re.I)
 POLES_RE = re.compile(r"2p\s*=\s*(\d+)", re.I)
 SLOTS_RE = re.compile(r"(?:количеств[оа]\s+пазов|пазов)[^0-9]{0,30}(\d+)", re.I)
-Q_RE = re.compile(r"\bq\s*=\s*([\d.,]+)", re.I)
+# Require the numeric token to end on a digit. The old handbook often writes
+# values like "q=2.25." and the final sentence dot must not enter float().
+Q_RE = re.compile(r"\bq\s*=\s*(\d+(?:[.,]\d+)?)", re.I)
+MARKER_RE = re.compile(
+    r"(?:^|/)(?:met\d+|marker|icon|recommend)[^/]*\.(?:gif|jpe?g|png|webp)$",
+    re.I,
+)
 
 
 def clean(value: str | None) -> str:
@@ -36,6 +42,11 @@ def norm(value: str | None) -> str:
 
 def norm_path(value: str | None) -> str:
     return unquote((value or "").replace("\\", "/").lstrip("./"))
+
+
+def is_marker(path: str | None) -> bool:
+    value = norm_path(path)
+    return not value or bool(MARKER_RE.search(value))
 
 
 def stable_id(prefix: str, *parts: str) -> str:
@@ -133,7 +144,7 @@ def special_hints(text: str) -> list[str]:
         ("three_speed", r"трехскорост|трёхскорост|3[- ]?скорост"),
         ("separate_windings", r"раздельн.{0,20}обмот"),
         ("double_star", r"двойн.{0,10}звезд|yy\b"),
-        ("star_delta", r"звезд.{0,10}треуг"),
+        ("star_delta", r"звезд.{0,18}(?:и|/|-)?.{0,8}треуг"),
     ]
     return [label for label, pattern in rules if re.search(pattern, source)]
 
@@ -141,11 +152,17 @@ def special_hints(text: str) -> list[str]:
 def connection_kinds(text: str) -> list[str]:
     source = norm(text)
     kinds: list[str] = []
-    if re.search(r"в\s+звезд|соединени.{0,35}звезд", source):
-        kinds.append("star")
-    if re.search(r"в\s+треугольник|соединени.{0,35}треугольник", source):
-        kinds.append("delta")
+    combined = bool(re.search(r"звезд.{0,18}(?:и|/|-)?.{0,8}треуг", source))
+    if combined:
+        kinds.append("star_delta")
+    else:
+        if re.search(r"в\s+звезд|соединени.{0,35}звезд", source):
+            kinds.append("star")
+        if re.search(r"в\s+треугольник|соединени.{0,35}треугольник", source):
+            kinds.append("delta")
     for item in special_hints(source):
+        if item == "star_delta" and combined:
+            continue
         if item not in kinds:
             kinds.append(item)
     return kinds
@@ -170,6 +187,15 @@ def connection_option_id(page: str, kind: str | None, image: str | None) -> str:
     silently losing the connection reference.
     """
     return stable_id("CM-CON", page, image or "", kind or "unknown")
+
+
+def first_real_image(paragraphs: list[dict], index: int, lookahead: int = 3) -> str | None:
+    for paragraph in paragraphs[index:index + lookahead + 1]:
+        for image in paragraph.get("images", []):
+            candidate = norm_path(image.get("src"))
+            if candidate and not is_marker(candidate):
+                return candidate
+    return None
 
 
 def inspect_connection(root: Path, href: str, cache: dict[str, dict]) -> dict:
@@ -199,11 +225,7 @@ def inspect_connection(root: Path, href: str, cache: dict[str, dict]) -> dict:
         kinds = connection_kinds(ptext)
         if not kinds:
             continue
-        image_src = None
-        if paragraph["images"]:
-            image_src = norm_path(paragraph["images"][0].get("src"))
-        elif idx + 1 < len(doc.paragraphs) and doc.paragraphs[idx + 1]["images"]:
-            image_src = norm_path(doc.paragraphs[idx + 1]["images"][0].get("src"))
+        image_src = first_real_image(doc.paragraphs, idx)
         if image_src:
             for kind in kinds:
                 image_key = (kind, image_src)
@@ -220,7 +242,6 @@ def inspect_connection(root: Path, href: str, cache: dict[str, dict]) -> dict:
     options: list[dict] = []
     seen_options: set[str] = set()
 
-    # Concrete image-backed options are preferred.
     for image in images:
         cid = image["connection_id"]
         if cid in seen_options:
@@ -234,9 +255,6 @@ def inspect_connection(root: Path, href: str, cache: dict[str, dict]) -> dict:
             "scope": "image",
         })
 
-    # Some old pages name a connection type but do not allow a reliable
-    # paragraph-to-image association. Preserve that type as a page-level
-    # selectable option instead of inventing an image mapping.
     image_types = {item["type"] for item in images}
     for kind in sorted(set(types)):
         if kind in image_types:
@@ -253,8 +271,6 @@ def inspect_connection(root: Path, href: str, cache: dict[str, dict]) -> dict:
             "scope": "page",
         })
 
-    # A referenced ss*.html page with no safely classified type is still a
-    # real connection reference. Represent it as one unknown page-level option.
     if not options:
         cid = connection_option_id(target, None, None)
         options.append({
@@ -301,14 +317,7 @@ def variants_from_page(root: Path, path: Path, connection_cache: dict[str, dict]
         if "схема укладки" not in norm(description):
             continue
 
-        image = None
-        if paragraph["images"]:
-            image = norm_path(paragraph["images"][0].get("src"))
-        if not image:
-            for following in paragraphs[index + 1:index + 3]:
-                if following["images"]:
-                    image = norm_path(following["images"][0].get("src"))
-                    break
+        image = first_real_image(paragraphs, index, lookahead=2)
         if not image or image in seen_images:
             continue
         seen_images.add(image)
@@ -316,8 +325,6 @@ def variants_from_page(root: Path, path: Path, connection_cache: dict[str, dict]
         pitch_match = PITCH_RE.search(description)
         branches = sorted({int(m.group(1)) for m in BRANCH_RE.finditer(description)})
 
-        # One paragraph may repeat the same ss*.html href several times. The
-        # catalog reports distinct physical connection pages.
         connection_targets: list[str] = []
         seen_connection_targets: set[str] = set()
         for link in paragraph["links"]:
