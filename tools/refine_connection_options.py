@@ -8,6 +8,11 @@ Rules:
 - a caption explicitly describing "star and delta" is one composite
   `star_delta` option, not three independent options;
 - marker/recommendation icons are never used as CM-CON previews;
+- ordinary `images/sovmob/...` drawings are allowed: that directory contains
+  both real drawings and a few marker files, so only marker file names are
+  rejected;
+- single-phase pages are recognized as either a winding-connection drawing or
+  a motor-to-mains connection drawing when the legacy caption says so;
 - a concrete image is used only when it is in the caption paragraph or one of
   the next three paragraphs;
 - when a page/type is known but a concrete image cannot be bound safely, keep a
@@ -47,14 +52,25 @@ def is_marker(path: str | None) -> bool:
     value = norm_path(path).lower()
     if not value:
         return True
-    if "images/sovmob/" in value:
-        return True
     return bool(re.search(r"(?:^|/)(?:met\d+|marker|icon|recommend)[^/]*\.(?:gif|jpe?g|png|webp)$", value, re.I))
+
+
+def parallel_branches(text: str) -> list[int]:
+    return sorted({int(match.group(1)) for match in re.finditer(r"[аa]\s*=\s*(\d+)", text or "", re.I)})
 
 
 def connection_kinds(text: str) -> list[str]:
     source = norm(text)
     kinds: list[str] = []
+
+    # Single-phase pages frequently do not use star/delta terminology at all.
+    # Their captions do explicitly distinguish the winding connection drawing
+    # from the diagram showing how the motor is connected to the mains.
+    if re.search(r"схем[аы]\s+соединени[йя].{0,35}однофазн.{0,20}обмот", source):
+        kinds.append("single_phase_winding")
+    if re.search(r"схем[аы]\s+подключени[йя].{0,35}однофазн.{0,35}(?:двигател|электродвигател).{0,20}(?:к\s+)?сети", source):
+        kinds.append("single_phase_supply")
+
     star_delta = bool(re.search(r"звезд.{0,18}(?:и|/|-)?.{0,8}треуг", source))
     if star_delta:
         kinds.append("star_delta")
@@ -152,6 +168,7 @@ def inspect_page(source_root: Path, page: str) -> dict:
         image = nearby_real_image(doc.paragraphs, index)
         if not image:
             continue
+        branches = parallel_branches(text)
         for kind in kinds:
             key = (kind, image)
             if key in seen:
@@ -162,6 +179,7 @@ def inspect_page(source_root: Path, page: str) -> dict:
                 "type": kind,
                 "image": image,
                 "description": text,
+                "parallel_branches": branches,
                 "scope": "image",
             })
 
@@ -175,6 +193,7 @@ def inspect_page(source_root: Path, page: str) -> dict:
             "type": kind,
             "image": None,
             "description": doc.title,
+            "parallel_branches": parallel_branches(doc.title),
             "scope": "page",
         })
 
@@ -184,6 +203,7 @@ def inspect_page(source_root: Path, page: str) -> dict:
             "type": None,
             "image": None,
             "description": doc.title,
+            "parallel_branches": parallel_branches(doc.title),
             "scope": "page",
         })
 
@@ -193,6 +213,7 @@ def inspect_page(source_root: Path, page: str) -> dict:
             "type": item["type"],
             "image": item["image"],
             "description": item["description"],
+            "parallel_branches": item.get("parallel_branches", []),
         }
         for item in image_options
     ]
