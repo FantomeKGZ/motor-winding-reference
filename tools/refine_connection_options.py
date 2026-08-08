@@ -11,11 +11,11 @@ Rules:
 - ordinary `images/sovmob/...` drawings are allowed: that directory contains
   both real drawings and a few marker files, so only marker file names are
   rejected;
-- single-, two- and three-speed pages are classified from their visible legacy
-  captions, not from file names;
-- multiple consecutive image-only paragraphs after one caption belong to that
-  caption until the next text paragraph, so no connection drawing is silently
-  dropped;
+- single-, two- and three-speed pages and combined-winding pages are classified
+  from visible legacy captions, not from file names;
+- multiple consecutive image-only paragraphs, and explicitly numbered variant
+  paragraphs, can belong to one preceding caption; the association stops when
+  a new semantic caption begins;
 - a page with legacy mojibake is decoded using evidence from Russian technical
   keywords rather than assuming every file has the same byte encoding;
 - when a page/type is known but a concrete image cannot be bound safely, keep a
@@ -35,7 +35,6 @@ from urllib.parse import unquote
 
 
 def repair_mojibake(value: str) -> str:
-    """Repair cp1251 bytes that were historically stored/displayed as Latin-1."""
     def repl(match: re.Match[str]) -> str:
         chunk = match.group(0)
         try:
@@ -106,6 +105,9 @@ def connection_kinds(text: str) -> list[str]:
     if re.search(r"схем[аы]\s+подключени[йя].{0,40}(?:трех|трёх)скоростн.{0,35}(?:двигател|электродвигател).{0,20}(?:к\s+)?сети", source):
         kinds.append("three_speed_supply")
 
+    if re.search(r"схем[аы]\s+соединени[йя].{0,40}совмещенн.{0,20}обмот", source):
+        kinds.append("combined_winding")
+
     star_delta = bool(re.search(r"звезд.{0,18}(?:и|/|-)?.{0,8}треуг", source))
     if star_delta:
         kinds.append("star_delta")
@@ -119,6 +121,14 @@ def connection_kinds(text: str) -> list[str]:
     if re.search(r"двойн.{0,10}звезд|\byy\b", source):
         kinds.append("double_star")
     return list(dict.fromkeys(kinds))
+
+
+def subordinate_variant_text(text: str) -> bool:
+    source = norm(text)
+    return bool(
+        re.fullmatch(r"вариант\s*№?\s*\d+\.?", source)
+        or re.search(r"схем[аы]\s+соединени[йя].{0,45}совмещенн.{0,20}обмот.{0,45}(?:параллельн|последовательн)", source)
+    )
 
 
 class Parser(HTMLParser):
@@ -170,17 +180,14 @@ class Parser(HTMLParser):
 def decode_legacy_bytes(raw: bytes) -> str:
     candidates = []
     for encoding in ("windows-1251", "utf-8"):
-        try:
-            text = raw.decode(encoding, errors="replace")
-        except LookupError:
-            continue
+        text = raw.decode(encoding, errors="replace")
         repaired = repair_mojibake(text)
         lowered = repaired.lower().replace("ё", "е")
         keyword_score = sum(lowered.count(word) for word in ("схем", "обмот", "электродвиг", "соедин", "подключ"))
         replacement_penalty = repaired.count("�") * 10
         cyrillic_score = len(re.findall(r"[А-Яа-яЁё]", repaired)) / 1000
         candidates.append((keyword_score * 100 + cyrillic_score - replacement_penalty, repaired))
-    return max(candidates, key=lambda item: item[0])[1] if candidates else raw.decode("windows-1251", errors="replace")
+    return max(candidates, key=lambda item: item[0])[1]
 
 
 def parse_page(path: Path) -> Parser:
@@ -193,17 +200,17 @@ def parse_page(path: Path) -> Parser:
 
 def associated_real_images(paragraphs: list[dict], index: int) -> list[str]:
     images: list[str] = []
-
-    # Images embedded directly in the caption paragraph belong to the caption.
     for image in paragraphs[index].get("images", []):
         if not is_marker(image) and image not in images:
             images.append(image)
 
-    # Then collect consecutive image-only paragraphs. Stop at the next textual
-    # paragraph because it starts a new semantic block/caption.
     for item in paragraphs[index + 1:index + 10]:
-        if clean(item.get("text", "")):
-            break
+        text = clean(item.get("text", ""))
+        if text:
+            if connection_kinds(text):
+                break
+            if not subordinate_variant_text(text):
+                break
         for image in item.get("images", []):
             if not is_marker(image) and image not in images:
                 images.append(image)
@@ -221,6 +228,7 @@ def inspect_page(source_root: Path, page: str) -> dict:
     page_kinds = connection_kinds(f"{doc.title} {' '.join(doc.body)}")
     image_options: list[dict] = []
     seen: set[tuple[str, str]] = set()
+    default_branches = parallel_branches(doc.title)
 
     for index, paragraph in enumerate(doc.paragraphs):
         text = paragraph.get("text", "")
@@ -230,7 +238,7 @@ def inspect_page(source_root: Path, page: str) -> dict:
         images = associated_real_images(doc.paragraphs, index)
         if not images:
             continue
-        branches = parallel_branches(text)
+        branches = parallel_branches(text) or default_branches
         phase = phase_connection(text)
         for image in images:
             for kind in kinds:
@@ -250,15 +258,21 @@ def inspect_page(source_root: Path, page: str) -> dict:
 
     options = list(image_options)
     image_kinds = {item["type"] for item in image_options}
+    specific_image_kinds = image_kinds - {"star", "delta", "star_delta"}
     for kind in page_kinds:
         if kind in image_kinds:
+            continue
+        # If the page has a more specific, image-backed family (for example a
+        # combined-winding diagram), a generic star/delta word in a section
+        # heading is metadata for that family, not a separate selectable option.
+        if kind in {"star", "delta", "star_delta"} and specific_image_kinds:
             continue
         options.append({
             "connection_id": stable_id("CM-CON", target, "", kind),
             "type": kind,
             "image": None,
             "description": doc.title,
-            "parallel_branches": parallel_branches(doc.title),
+            "parallel_branches": default_branches,
             "phase_connection": phase_connection(doc.title),
             "scope": "page",
         })
@@ -269,7 +283,7 @@ def inspect_page(source_root: Path, page: str) -> dict:
             "type": None,
             "image": None,
             "description": doc.title,
-            "parallel_branches": parallel_branches(doc.title),
+            "parallel_branches": default_branches,
             "phase_connection": phase_connection(doc.title),
             "scope": "page",
         })
