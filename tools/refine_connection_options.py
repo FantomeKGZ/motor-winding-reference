@@ -11,13 +11,13 @@ Rules:
 - ordinary `images/sovmob/...` drawings are allowed: that directory contains
   both real drawings and a few marker files, so only marker file names are
   rejected;
-- single-phase pages are recognized as either a winding-connection drawing or
-  a motor-to-mains connection drawing when the legacy caption says so;
-- two-speed pages are recognized as winding-connection and mains-connection
-  drawings; explicit parallel branches and phase-connection notation are kept
-  as metadata instead of being guessed from file names;
-- a concrete image is used only when it is in the caption paragraph or one of
-  the next three paragraphs;
+- single-, two- and three-speed pages are classified from their visible legacy
+  captions, not from file names;
+- multiple consecutive image-only paragraphs after one caption belong to that
+  caption until the next text paragraph, so no connection drawing is silently
+  dropped;
+- a page with legacy mojibake is decoded using evidence from Russian technical
+  keywords rather than assuming every file has the same byte encoding;
 - when a page/type is known but a concrete image cannot be bound safely, keep a
   page-scoped option instead of guessing.
 """
@@ -34,8 +34,21 @@ from pathlib import Path
 from urllib.parse import unquote
 
 
+def repair_mojibake(value: str) -> str:
+    """Repair cp1251 bytes that were historically stored/displayed as Latin-1."""
+    def repl(match: re.Match[str]) -> str:
+        chunk = match.group(0)
+        try:
+            return chunk.encode("latin1").decode("cp1251")
+        except (UnicodeEncodeError, UnicodeDecodeError):
+            return chunk
+
+    return re.sub(r"[\x80-\xff]+", repl, value)
+
+
 def clean(value: str | None) -> str:
-    return re.sub(r"\s+", " ", unescape(value or "")).strip()
+    text = repair_mojibake(unescape(value or ""))
+    return re.sub(r"\s+", " ", text).strip()
 
 
 def norm(value: str | None) -> str:
@@ -87,6 +100,11 @@ def connection_kinds(text: str) -> list[str]:
         kinds.append("two_speed_winding")
     if re.search(r"схем[аы]\s+подключени[йя].{0,40}двухскоростн.{0,35}(?:двигател|электродвигател).{0,20}(?:к\s+)?сети", source):
         kinds.append("two_speed_supply")
+
+    if re.search(r"схем[аы]\s+соединени[йя].{0,40}(?:трех|трёх)скоростн.{0,25}(?:обмот|электродвигател)", source):
+        kinds.append("three_speed_winding")
+    if re.search(r"схем[аы]\s+подключени[йя].{0,40}(?:трех|трёх)скоростн.{0,35}(?:двигател|электродвигател).{0,20}(?:к\s+)?сети", source):
+        kinds.append("three_speed_supply")
 
     star_delta = bool(re.search(r"звезд.{0,18}(?:и|/|-)?.{0,8}треуг", source))
     if star_delta:
@@ -149,20 +167,47 @@ class Parser(HTMLParser):
             self._p_text.append(text)
 
 
+def decode_legacy_bytes(raw: bytes) -> str:
+    candidates = []
+    for encoding in ("windows-1251", "utf-8"):
+        try:
+            text = raw.decode(encoding, errors="replace")
+        except LookupError:
+            continue
+        repaired = repair_mojibake(text)
+        lowered = repaired.lower().replace("ё", "е")
+        keyword_score = sum(lowered.count(word) for word in ("схем", "обмот", "электродвиг", "соедин", "подключ"))
+        replacement_penalty = repaired.count("�") * 10
+        cyrillic_score = len(re.findall(r"[А-Яа-яЁё]", repaired)) / 1000
+        candidates.append((keyword_score * 100 + cyrillic_score - replacement_penalty, repaired))
+    return max(candidates, key=lambda item: item[0])[1] if candidates else raw.decode("windows-1251", errors="replace")
+
+
 def parse_page(path: Path) -> Parser:
     parser = Parser()
-    parser.feed(path.read_bytes().decode("windows-1251", errors="replace"))
+    parser.feed(decode_legacy_bytes(path.read_bytes()))
     parser.close()
     parser.title = clean(parser.title)
     return parser
 
 
-def nearby_real_image(paragraphs: list[dict], index: int) -> str | None:
-    for item in paragraphs[index:index + 4]:
+def associated_real_images(paragraphs: list[dict], index: int) -> list[str]:
+    images: list[str] = []
+
+    # Images embedded directly in the caption paragraph belong to the caption.
+    for image in paragraphs[index].get("images", []):
+        if not is_marker(image) and image not in images:
+            images.append(image)
+
+    # Then collect consecutive image-only paragraphs. Stop at the next textual
+    # paragraph because it starts a new semantic block/caption.
+    for item in paragraphs[index + 1:index + 10]:
+        if clean(item.get("text", "")):
+            break
         for image in item.get("images", []):
-            if not is_marker(image):
-                return image
-    return None
+            if not is_marker(image) and image not in images:
+                images.append(image)
+    return images
 
 
 def inspect_page(source_root: Path, page: str) -> dict:
@@ -182,25 +227,26 @@ def inspect_page(source_root: Path, page: str) -> dict:
         kinds = connection_kinds(text)
         if not kinds:
             continue
-        image = nearby_real_image(doc.paragraphs, index)
-        if not image:
+        images = associated_real_images(doc.paragraphs, index)
+        if not images:
             continue
         branches = parallel_branches(text)
         phase = phase_connection(text)
-        for kind in kinds:
-            key = (kind, image)
-            if key in seen:
-                continue
-            seen.add(key)
-            image_options.append({
-                "connection_id": stable_id("CM-CON", target, image, kind),
-                "type": kind,
-                "image": image,
-                "description": text,
-                "parallel_branches": branches,
-                "phase_connection": phase,
-                "scope": "image",
-            })
+        for image in images:
+            for kind in kinds:
+                key = (kind, image)
+                if key in seen:
+                    continue
+                seen.add(key)
+                image_options.append({
+                    "connection_id": stable_id("CM-CON", target, image, kind),
+                    "type": kind,
+                    "image": image,
+                    "description": text,
+                    "parallel_branches": branches,
+                    "phase_connection": phase,
+                    "scope": "image",
+                })
 
     options = list(image_options)
     image_kinds = {item["type"] for item in image_options}
