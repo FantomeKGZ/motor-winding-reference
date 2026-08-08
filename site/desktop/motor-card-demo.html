@@ -15,8 +15,14 @@
   <h1>Тест карточки двигателя</h1>
   <p class="cm-demo-note"><strong>Только внешний сайт.</strong> Эта страница не подключается к ESP32 и ничего туда не записывает. Она нужна для проверки полного сценария: каталог → выбор укладки → выбор подключения → виджет карточки.</p>
 
+  <section class="cm-demo-presets" aria-label="Тестовые двигатели">
+    <strong>Тестовый двигатель:</strong>
+    <button type="button" data-demo-preset="three-phase">36 пазов · 3000 об/мин · трёхфазный</button>
+    <button type="button" data-demo-preset="single-phase">12 пазов · 3000 об/мин · однофазный</button>
+  </section>
+
   <div class="cm-demo-toolbar">
-    <button type="button" data-demo-reload>Сбросить тест</button>
+    <button type="button" data-demo-reload>Сбросить привязку</button>
     <span>Подходящих схем: <strong data-demo-candidate-count>0</strong></span>
     <span class="cm-demo-status" data-demo-status role="status"></span>
   </div>
