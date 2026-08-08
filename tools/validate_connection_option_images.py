@@ -25,8 +25,10 @@ from pathlib import Path
 from urllib.parse import unquote
 
 
+# images/sovmob/ is not intrinsically suspicious: it contains many real
+# winding drawings. Reject only obvious marker/icon file names.
 MARKER_RE = re.compile(
-    r"(?:^|/)(?:images/sovmob/)?(?:met\d+|marker|icon|recommend)[^/]*\.(?:gif|jpe?g|png|webp)$",
+    r"(?:^|/)(?:met\d+|marker|icon|recommend)[^/]*\.(?:gif|jpe?g|png|webp)$",
     re.I,
 )
 
@@ -43,9 +45,6 @@ def stable_connection_id(page: str, image: str | None, kind: str | None) -> str:
 def suspicious_image(path: str | None) -> bool:
     value = norm_path(path)
     if not value:
-        return True
-    low = value.lower()
-    if "/images/sovmob/" in f"/{low}":
         return True
     return bool(MARKER_RE.search(value))
 
