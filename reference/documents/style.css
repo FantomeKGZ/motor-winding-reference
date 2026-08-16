@@ -1,115 +1,247 @@
+html {
+  box-sizing: border-box;
+  background: #f4f7fb;
+}
+*, *::before, *::after { box-sizing: inherit; }
+
 body {
- max-width: 1500px; /* Максимальная ширина контейнера */
- margin: 0 auto; /* Отступ слева и справа */
+  width: min(1500px, calc(100% - 24px));
+  margin: 0 auto;
+  padding: 0 0 28px;
+  color: #182433;
+  background: #f4f7fb;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
 }
+
 hr {
-    border: none; /* Убираем границу */
-    background-color: #996600; /* Цвет линии */
-    color: #996600; /* Цвет линии для IE6-7 */
-    height: 3px; /* Толщина линии */
-   }
+  height: 1px;
+  margin: 22px 0;
+  border: 0;
+  background: #d8e2ee;
+}
+
 @media screen {
-.verh { /* Полоса шапки */
- background: url("../images/verh2.jpg") /* Путь к фоновой картинке */
- repeat-x; /* Повторяем фон по горизонтали */
- margin: 0px; /* Обнуляем отступы */
- margin-top: 5px; /* Отступ от верха */
+  .verh {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    min-height: 62px;
+    margin: 0 -12px 14px;
+    padding: 0 max(18px, calc((100% - 1180px) / 2));
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid rgba(216, 226, 238, .9);
+    background: rgba(255, 255, 255, .94);
+    box-shadow: 0 7px 24px rgba(28, 52, 84, .07);
+  }
+
+  .verh a {
+    display: flex;
+    align-items: center;
+    min-height: 62px;
+    color: #182433 !important;
+    text-decoration: none;
+  }
+
+  .verh a::before {
+    content: "CM";
+    width: 38px;
+    height: 38px;
+    margin-right: 12px;
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 auto;
+    border-radius: 11px;
+    color: #fff;
+    background: linear-gradient(145deg, #1769aa, #0e4e83);
+    box-shadow: 0 8px 18px rgba(23, 105, 170, .22);
+    font-size: 14px;
+    font-weight: 800;
+  }
+
+  .verh a::after {
+    content: "CoilMaster вЂ” РЎРїСЂР°РІРѕС‡РЅРёРє РїРѕ РѕР±РјРѕС‚РєР°Рј";
+    color: #182433;
+    font-size: 16px;
+    font-weight: 800;
+  }
+
+  .verh img { display: none; }
+
+  .content {
+    width: min(1180px, 100%);
+    margin: 0 auto 14px;
+    padding: clamp(18px, 3vw, 32px);
+    overflow: hidden;
+    border: 1px solid #d8e2ee;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 16px 38px rgba(28, 52, 84, .09);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    margin: 22px 0 14px;
+    color: #173f65;
+    font-weight: 800;
+    line-height: 1.2;
+    text-align: center;
+  }
+  h1 { font-size: clamp(24px, 3.5vw, 36px); letter-spacing: -.025em; }
+  h2 { font-size: clamp(20px, 3vw, 30px); }
+  h3, h4, h5, h6 { font-size: clamp(18px, 2.5vw, 24px); }
+
+  strong { color: #173f65; }
+
+  p, li { overflow-wrap: anywhere; }
+  ul, ol { padding-left: clamp(22px, 4vw, 38px); }
+  li + li { margin-top: 7px; }
+
+  a:link { color: #1769aa; text-decoration: none; }
+  a:visited { color: #6558a8; text-decoration: none; }
+  a:active { color: #0b7758; }
+  a:hover { color: #0e4e83; text-decoration: underline; }
+
+  abbr {
+    color: #173f65;
+    font-weight: 800;
+    text-decoration-thickness: 1px;
+  }
+
+  .glavnaya {
+    margin: 0 0 18px;
+    text-align: left;
+  }
+  .glavnaya a {
+    display: inline-flex;
+    min-height: 40px;
+    align-items: center;
+    padding: 0 12px;
+    border: 1px solid #d8e2ee;
+    border-radius: 10px;
+    background: #f6f9fc;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .glavnaya a::before { content: "в†ђ"; margin-right: 7px; }
+
+  .obhsx { text-align: center; }
+  .lit { color: #66758a; font-size: 88%; }
+
+  table,
+  .table,
+  .table2 {
+    display: block;
+    width: max-content;
+    max-width: 100%;
+    margin: 18px auto;
+    overflow-x: auto;
+    border: 1px solid #b9c8d8;
+    border-collapse: collapse;
+    border-spacing: 0;
+    background: #fff;
+    color: #182433;
+    text-align: center;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  caption {
+    padding: 10px;
+    color: #173f65;
+    font-weight: 800;
+  }
+
+  th, td {
+    min-width: 42px;
+    padding: 7px 9px;
+    border: 1px solid #cbd7e3;
+    vertical-align: middle;
+  }
+
+  tr[bgcolor="#DFDFDF"],
+  tr[bgcolor="#dfdfdf"] { background: #edf3f8 !important; }
+  tr[bgcolor="#FFFFFF"],
+  tr[bgcolor="#ffffff"] { background: #fff !important; }
+
+  td a {
+    display: inline-block;
+    min-width: 24px;
+    min-height: 24px;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
+  }
+
+  p[align="center"] img,
+  div[align="center"] img {
+    max-width: min(100%, 1200px);
+  }
+
+  body > div[align="center"]:last-child {
+    width: min(1180px, 100%);
+    margin: 0 auto;
+    padding: 16px 12px;
+    color: #66758a;
+    font-size: 12px;
+    text-align: center;
+  }
+
+  body > div[align="center"]:last-child strong {
+    color: inherit;
+    font-size: inherit;
+  }
 }
-.content { /* Основное содержание страницы */
- background-image: url("../images/fon.gif"); /* Фон */
- padding: 5px; /* Поля вокруг текста */
- margin-top: 5px; /* Отступ от верха */
- margin-bottom: 5px; /* Отступ снизу */
+
+@media screen and (max-width: 640px) {
+  body {
+    width: 100%;
+    padding-bottom: 16px;
+    font-size: 15px;
+  }
+
+  .verh {
+    min-height: 58px;
+    margin: 0 0 10px;
+    padding: 0 12px;
+  }
+  .verh a { min-height: 58px; }
+  .verh a::before { width: 34px; height: 34px; border-radius: 10px; }
+  .verh a::after { content: "CoilMaster В· РЎРїСЂР°РІРѕС‡РЅРёРє"; font-size: 14px; }
+
+  .content {
+    border-width: 1px 0;
+    border-radius: 0;
+    padding: 16px 12px 22px;
+    box-shadow: none;
+  }
+
+  h1 { font-size: 24px; }
+  h2 { font-size: 21px; }
+  .glavnaya a { width: 100%; justify-content: center; }
+
+  table,
+  .table,
+  .table2 {
+    margin-left: 0;
+    margin-right: 0;
+    font-size: 13px;
+  }
+
+  th, td { padding: 6px 7px; }
 }
-H1, H2, H3, H4, H5, H6 { /* Заголовок страницы */
- text-align: center; /* Выравнивание по центру */
- font-size: 130%; /* Размер шрифта */
- color: #996600; /* Цвет текста */
-}
-strong { /* Выделение текста */
- font-size: 80%; /* Размер шрифта */
- color: #996600; /* Цвет текста */
-}
-.table { /* Таблица */
- text-align: center; /* Выравнивание по центру */
- border: 3px double black; /* Рамка вокруг таблицы */
- border-collapse: collapse; /* Отображать только одинарные линии */
-}
-A:link { /* Стиль для непосещенной ссылки */
- text-decoration: none; /* Убирает подчеркивание для ссылок */
- color: #003399; /* Цвет ссылки */
-} 
-A:visited { /* Стиль для посещенной ссылки */
- text-decoration: none; /* Убирает подчеркивание для ссылок */
-} 
-A:active { /* Стиль для активной ссылки */
- text-decoration: none; /* Убирает подчеркивание для ссылок */
- color: #006600; /* Цвет ссылки */
-} 
-A:hover { /* Стиль для ссылки при наведении на нее мышью */
- text-decoration: none; /* Убирает подчеркивание для ссылок */
- color: #CC9900; /* Цвет ссылки */
-}
-ABBR { /* Шапка таблицы */
- color: #996600; /* Цвет текста */
- font-weight: bold; /* Полужирный шрифт */
-}
-.glavnaya { /* Возврат на главную */
- text-align: left; /* Выравнивание слева */
-}
-.obhsx { /* Схемы укл соед подкл */
- text-align: center; /* Выравнивание */
-}
-.lit { /* Литература */
- font-size: 80%; /* Размер шрифта */
-}
-img {
- max-width: 100%;
- height: auto;
-}
-}
+
 @media print {
-.verh { /* Полоса шапки */
- display: none;
-}
-.content { /* Основное содержание страницы */
- background-color: #FFFFFF;
- color: #000000; /* Цвет текста */
-}
-H1, H2, H3, H4, H5, H6 { /* Заголовок страницы */
- text-align: center; /* Выравнивание по центру */
- font-size: 100%; /* Размер шрифта */
- color: #000000; /* Цвет текста */
-}
-.table { /* Таблица */
- text-align: center; /* Выравнивание по центру */
- border: 3px double black; /* Рамка вокруг таблицы */
- border-collapse: collapse; /* Отображать только одинарные линии */
- color: #000000; /* Цвет текста */
- font-size: 100%; /* Размер шрифта */
-}
-.table2 { /* Таблица */
- text-align: center; /* Выравнивание по центру */
- border: 3px double black; /* Рамка вокруг таблицы */
- border-collapse: collapse; /* Отображать только одинарные линии */
- width: 700px; /* ширина контейнера */
- color: #000000; /* Цвет текста */
-}
-ABBR { /* Шапка таблицы */
- color: #996600; /* Цвет текста */
- font-weight: bold; /* Полужирный шрифт */
-}
-A:link, A:visited, A:active, A:hover { /* Стиль для ссылки */
- text-decoration: none; /* Убирает подчеркивание для ссылок */
- color: #000000;
-}
-.glavnaya { /* Возврат на главную */
- display: none;
-}
-.obhsx { /* Схемы укл соед подкл */
- display: none;
-}
-.lit { /* Литература */
- display: none;
-}
+  html, body { background: #fff; }
+  body { width: auto; margin: 0; color: #000; font-family: Arial, sans-serif; }
+  .verh, .glavnaya, .obhsx, .lit { display: none; }
+  .content { margin: 0; padding: 0; background: #fff; color: #000; box-shadow: none; }
+  h1, h2, h3, h4, h5, h6 { color: #000; text-align: center; font-size: 100%; }
+  table, .table, .table2 { border: 1px solid #000; border-collapse: collapse; color: #000; }
+  th, td { border: 1px solid #000; }
+  a:link, a:visited, a:active, a:hover { color: #000; text-decoration: none; }
+  img { max-width: 100%; height: auto; }
 }
