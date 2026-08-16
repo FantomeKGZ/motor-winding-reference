@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1769aa">
+  <meta name="description" content="CoilMaster — единый адаптивный справочник по обмоткам асинхронных электродвигателей для ПК и мобильных устройств.">
+  <title>CoilMaster — справочник по обмоткам</title>
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="shell topbar-inner">
+      <a class="brand" href="./" aria-label="CoilMaster — главная">
+        <span class="brand-mark">CM</span>
+        <span>CoilMaster<small>Справочник по обмоткам</small></span>
+      </a>
+      <nav class="top-actions" aria-label="Основная навигация">
+        <a class="nav-link" href="#catalog">Поиск</a>
+        <a class="nav-link" href="reference/index.html">Полный справочник</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="hero" aria-labelledby="page-title">
+      <div class="hero-copy">
+        <div class="eyebrow">CoilMaster Reference</div>
+        <h1 id="page-title">Справочник обмотчика без разделения на ПК и телефон</h1>
+        <p>Единая точка входа к схемам укладки и соединения обмоток, обмоточным данным и справочным материалам. Полный исходный массив сохранён; интерфейс адаптируется к размеру экрана.</p>
+        <div class="hero-buttons">
+          <a class="btn primary" href="#catalog">Найти схему</a>
+          <a class="btn" href="reference/index.html">Открыть полный каталог</a>
+        </div>
+      </div>
+
+      <aside class="hero-panel" aria-label="Статус справочника">
+        <h2>Что изменилось</h2>
+        <div class="metric">
+          <strong>1 сайт</strong>
+          <span>Один responsive-интерфейс вместо двух отдельных копий для desktop и mobile.</span>
+        </div>
+        <div class="metric">
+          <strong>100% источника</strong>
+          <span>Канонический desktop-экспорт сохранён целиком в каталоге <code>reference/</code>.</span>
+        </div>
+        <div class="metric">
+          <strong>Без потери схем</strong>
+          <span>Страницы и изображения не пересоздаются вручную: используются исходные файлы справочника.</span>
+        </div>
+      </aside>
+    </section>
+
+    <section class="section" aria-labelledby="quick-title">
+      <div class="section-heading">
+        <div><h2 id="quick-title">Быстрый доступ</h2></div>
+        <p>Сначала используйте поиск по номеру пазов и оборотам. Для редких схем и справочных статей доступен полный исходный индекс.</p>
+      </div>
+      <div class="cards">
+        <a class="card" href="#catalog">
+          <span class="card-icon">Q</span>
+          <h3>Поиск по справочнику</h3>
+          <p>Ищет по названиям и ссылкам исходного каталога: пазы, обороты, тип схемы и обозначения.</p>
+        </a>
+        <a class="card" href="reference/index.html">
+          <span class="card-icon">∿</span>
+          <h3>Схемы обмоток</h3>
+          <p>Полная матрица односкоростных и других схем из канонической версии справочника.</p>
+        </a>
+        <a class="card" href="reference/byobz.html">
+          <span class="card-icon">i</span>
+          <h3>Обозначения</h3>
+          <p>Буквенные обозначения, изображения схем и цветовая маркировка.</p>
+        </a>
+        <a class="card" href="reference/index.html">
+          <span class="card-icon">2×</span>
+          <h3>Двухскоростные двигатели</h3>
+          <p>Схемы соединений и подключения двухскоростных обмоток в полном каталоге.</p>
+        </a>
+        <a class="card" href="reference/index.html">
+          <span class="card-icon">Ω</span>
+          <h3>Справочные данные</h3>
+          <p>Таблицы, пояснения и вспомогательные материалы, накопленные в исходном справочнике.</p>
+        </a>
+        <a class="card" href="reference/index.html">
+          <span class="card-icon">↗</span>
+          <h3>Исходный индекс</h3>
+          <p>Прямой доступ ко всем разделам без фильтрации новой оболочкой.</p>
+        </a>
+      </div>
+    </section>
+
+    <section class="section" id="catalog" aria-labelledby="catalog-title">
+      <div class="section-heading">
+        <div><h2 id="catalog-title">Поиск схем и страниц</h2></div>
+        <p>Например: <b>36 1500</b>, <b>24 3000</b>, <b>1000 1500</b>. Каталог строится непосредственно из исходного <code>reference/index.html</code>, поэтому отдельную базу ссылок поддерживать не нужно.</p>
+      </div>
+      <div class="search-panel">
+        <div class="search-row">
+          <label>
+            <span class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">Поиск</span>
+            <input class="search-input" id="reference-search" type="search" autocomplete="off" placeholder="Введите пазы, обороты или название…">
+          </label>
+          <button class="btn" id="reload-catalog" type="button">Обновить каталог</button>
+        </div>
+        <div class="search-meta" id="search-meta" aria-live="polite">Загрузка каталога…</div>
+        <div class="results" id="search-results"></div>
+      </div>
+
+      <div class="notice">
+        Справочные материалы и изображения принадлежат их указанным авторам и источникам. Эта оболочка не меняет техническое содержание исходных страниц; она объединяет навигацию и отображение для CoilMaster.
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="shell footer-line">
+      <span>CoilMaster · дополнительный справочник</span>
+      <span>Единая responsive-версия · desktop + mobile</span>
+    </div>
+  </footer>
+
+  <script src="assets/site.js" defer></script>
+</body>
+</html>
