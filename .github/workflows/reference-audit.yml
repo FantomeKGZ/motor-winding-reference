@@ -1,0 +1,21 @@
+name: Reference structure and link audit
+
+on:
+  push:
+    branches:
+      - main
+      - agent/responsive-reference-site
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Check structure and local links
+        run: node scripts/audit-links.mjs
