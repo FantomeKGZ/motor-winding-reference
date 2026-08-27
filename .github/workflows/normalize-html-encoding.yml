@@ -1,0 +1,125 @@
+name: Normalize HTML encoding
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  normalize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Convert legacy HTML to UTF-8
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          roots = [Path('sourse/desktop'), Path('sourse/mobile')]
+          changed = 0
+          converted = 0
+          metadata_only = 0
+
+          charset_re = re.compile(
+              rb'charset\s*=\s*["\']?\s*(?:windows-1251|cp1251|win-1251)["\']?',
+              re.IGNORECASE,
+          )
+
+          def add_utf8_meta(text: str) -> str:
+              if re.search(r'charset\s*=\s*["\']?\s*utf-?8', text, re.IGNORECASE):
+                  return text
+              head = re.search(r'<head\b[^>]*>', text, re.IGNORECASE)
+              if head:
+                  pos = head.end()
+                  return text[:pos] + '\n<meta charset="utf-8">' + text[pos:]
+              html = re.search(r'<html\b[^>]*>', text, re.IGNORECASE)
+              if html:
+                  pos = html.end()
+                  return text[:pos] + '\n<head><meta charset="utf-8"></head>' + text[pos:]
+              return '<meta charset="utf-8">\n' + text
+
+          for root in roots:
+              if not root.exists():
+                  continue
+              for path in root.rglob('*'):
+                  if not path.is_file() or path.suffix.lower() not in {'.html', '.htm'}:
+                      continue
+
+                  raw = path.read_bytes()
+                  original = raw
+
+                  try:
+                      text = raw.decode('utf-8')
+                      was_converted = False
+                  except UnicodeDecodeError:
+                      text = raw.decode('cp1251')
+                      was_converted = True
+
+                  # Encoding metadata only: normalize legacy charset declarations.
+                  text = re.sub(
+                      r'charset\s*=\s*["\']?\s*(?:windows-1251|cp1251|win-1251)["\']?',
+                      'charset=utf-8',
+                      text,
+                      flags=re.IGNORECASE,
+                  )
+                  text = add_utf8_meta(text)
+                  new = text.encode('utf-8')
+
+                  if new != original:
+                      path.write_bytes(new)
+                      changed += 1
+                      if was_converted:
+                          converted += 1
+                      else:
+                          metadata_only += 1
+
+          print(f'Changed HTML files: {changed}')
+          print(f'Converted from Windows-1251: {converted}')
+          print(f'UTF-8 files with charset metadata normalized: {metadata_only}')
+          PY
+
+      - name: Verify every HTML file is UTF-8
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          bad = []
+          count = 0
+          for root in [Path('sourse/desktop'), Path('sourse/mobile')]:
+              if not root.exists():
+                  continue
+              for path in root.rglob('*'):
+                  if path.is_file() and path.suffix.lower() in {'.html', '.htm'}:
+                      count += 1
+                      try:
+                          path.read_text(encoding='utf-8')
+                      except UnicodeDecodeError:
+                          bad.append(str(path))
+          print(f'Checked HTML files: {count}')
+          if bad:
+              print('\n'.join(bad[:50]))
+              raise SystemExit(f'Non-UTF-8 HTML files remain: {len(bad)}')
+          PY
+
+      - name: Commit normalized encoding
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "No encoding changes required."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add sourse/desktop sourse/mobile
+          git commit -m "Convert legacy HTML pages to UTF-8"
+          git push
